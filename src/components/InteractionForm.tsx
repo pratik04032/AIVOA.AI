@@ -1,0 +1,171 @@
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, updateField, InteractionState } from '../store.ts';
+
+export default function InteractionForm() {
+  const dispatch = useDispatch();
+  const formState = useSelector((state: RootState) => state.interaction);
+
+  const handleChange = (field: keyof InteractionState, value: string) => {
+    dispatch(updateField({ field, value }));
+  };
+
+  const inputClasses = "w-full px-3 py-2 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-slate-800 bg-white placeholder-slate-400 transition-colors";
+  const labelClasses = "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
+
+  return (
+    <div className="space-y-8 max-w-3xl mx-auto">
+      <section>
+        <h3 className="text-lg font-semibold text-slate-800 mb-4">Interaction Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className={labelClasses}>HCP Name</label>
+            <input
+              type="text"
+              placeholder="Search or select HCP..."
+              value={formState.hcpName}
+              onChange={(e) => handleChange('hcpName', e.target.value)}
+              className={inputClasses}
+            />
+          </div>
+          <div>
+            <label className={labelClasses}>Interaction Type</label>
+            <select
+              value={formState.interactionType}
+              onChange={(e) => handleChange('interactionType', e.target.value)}
+              className={inputClasses}
+            >
+              <option value="">Select...</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Call">Call</option>
+              <option value="Email">Email</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className={labelClasses}>Date</label>
+            <input
+              type="date"
+              value={formState.date}
+              onChange={(e) => handleChange('date', e.target.value)}
+              className={inputClasses}
+            />
+          </div>
+          <div>
+            <label className={labelClasses}>Time</label>
+            <input
+              type="time"
+              value={formState.time}
+              onChange={(e) => handleChange('time', e.target.value)}
+              className={inputClasses}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-6">
+        <div>
+          <label className={labelClasses}>Attendees</label>
+          <input
+            type="text"
+            placeholder="Enter names or search..."
+            value={formState.attendees}
+            onChange={(e) => handleChange('attendees', e.target.value)}
+            className={inputClasses}
+          />
+        </div>
+
+        <div>
+          <label className={labelClasses}>Topics Discussed</label>
+          <textarea
+            placeholder="Enter key discussion points..."
+            rows={3}
+            value={formState.topicsDiscussed}
+            onChange={(e) => handleChange('topicsDiscussed', e.target.value)}
+            className={inputClasses}
+          />
+          <button className="mt-2 text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
+            <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
+          </button>
+        </div>
+      </section>
+
+      <section className="bg-slate-50 p-5 rounded-lg border border-slate-100">
+        <h3 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider">Materials & Samples</h3>
+        <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
+          <span className="text-sm text-slate-600 font-medium">Materials Shared</span>
+          <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">🔍 Search/Add</button>
+        </div>
+        <div className="text-xs text-slate-400 mb-4 italic">No materials added.</div>
+        
+        <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
+          <span className="text-sm text-slate-600 font-medium">Samples Distributed</span>
+          <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">➕ Add Sample</button>
+        </div>
+        <div className="text-xs text-slate-400 italic">No samples added.</div>
+      </section>
+
+      <section>
+        <label className={labelClasses}>Observed/Inferred HCP Sentiment</label>
+        <div className="flex space-x-6 mt-2">
+          {['Positive', 'Neutral', 'Negative'].map((sentiment) => (
+            <label key={sentiment} className="flex items-center space-x-2.5 text-sm text-slate-700 font-medium cursor-pointer">
+              <input
+                type="radio"
+                name="sentiment"
+                value={sentiment}
+                checked={formState.sentiment === sentiment}
+                onChange={(e) => handleChange('sentiment', e.target.value)}
+                className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
+              />
+              <span>{sentiment}</span>
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-6">
+        <div>
+          <label className={labelClasses}>Outcomes</label>
+          <textarea
+            placeholder="Key outcomes or agreements..."
+            rows={2}
+            value={formState.outcomes}
+            onChange={(e) => handleChange('outcomes', e.target.value)}
+            className={inputClasses}
+          />
+        </div>
+
+        <div>
+          <label className={labelClasses}>Follow-up Actions</label>
+          <textarea
+            placeholder="Enter next steps or tasks..."
+            rows={2}
+            value={formState.followUpActions}
+            onChange={(e) => handleChange('followUpActions', e.target.value)}
+            className={inputClasses}
+          />
+        </div>
+      </section>
+      
+      {formState.followUpActions && (
+        <section className="p-4 bg-blue-50 border border-blue-100 rounded-lg shadow-sm">
+          <h4 className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mb-2">AI Suggested Follow-ups</h4>
+          <ul className="text-xs text-blue-700 space-y-2">
+            <li className="flex items-center gap-2 cursor-pointer hover:bg-blue-100/50 p-1.5 -mx-1.5 rounded transition-colors">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              <span className="font-medium">Schedule follow-up meeting in 2 weeks</span>
+            </li>
+            <li className="flex items-center gap-2 cursor-pointer hover:bg-blue-100/50 p-1.5 -mx-1.5 rounded transition-colors">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              <span className="font-medium">Send OncoBoost Phase III PDF</span>
+            </li>
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

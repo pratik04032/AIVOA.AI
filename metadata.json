@@ -1,0 +1,6 @@
+{
+  "name": "Log Interaction Screen",
+  "description": "AI-first CRM HCP Module to log interactions with Healthcare Professionals via structured form or conversational chat interface.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
