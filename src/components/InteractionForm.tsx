@@ -125,11 +125,30 @@ export default function InteractionForm() {
           </div>
           <input
             type="text"
+            list="materials-options"
             placeholder="e.g. Product Brochure, Trial Kit..."
             value={formState.materialsShared}
             onChange={(e) => handleChange('materialsShared', e.target.value)}
             className={inputClasses}
           />
+          <datalist id="materials-options">
+            <option value="Product Brochure" />
+            <option value="Trial Kit" />
+            <option value="Clinical Trial Data" />
+            <option value="Dosing Guide" />
+            <option value="Patient Education Leaflet" />
+          </datalist>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {['Product Brochure', 'Trial Kit', 'Clinical Trial Data'].map((opt) => (
+              <button 
+                key={opt}
+                onClick={() => handleChange('materialsShared', formState.materialsShared ? `${formState.materialsShared}, ${opt}` : opt)}
+                className="px-2 py-1 bg-white border border-slate-200 text-[10px] text-slate-600 rounded shadow-sm hover:bg-slate-50 transition-colors"
+              >
+                + {opt}
+              </button>
+            ))}
+          </div>
         </div>
         
         <div>
@@ -139,11 +158,29 @@ export default function InteractionForm() {
           </div>
           <input
             type="text"
+            list="samples-options"
             placeholder="e.g. 5x 10mg Tablets..."
             value={formState.samplesDistributed}
             onChange={(e) => handleChange('samplesDistributed', e.target.value)}
             className={inputClasses}
           />
+          <datalist id="samples-options">
+            <option value="10mg Tablets (Box of 30)" />
+            <option value="20mg Tablets (Box of 30)" />
+            <option value="Starter Pack" />
+            <option value="50mg Injection" />
+          </datalist>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {['10mg Tablets (Box of 30)', 'Starter Pack', '50mg Injection'].map((opt) => (
+              <button 
+                key={opt}
+                onClick={() => handleChange('samplesDistributed', formState.samplesDistributed ? `${formState.samplesDistributed}, ${opt}` : opt)}
+                className="px-2 py-1 bg-white border border-slate-200 text-[10px] text-slate-600 rounded shadow-sm hover:bg-slate-50 transition-colors"
+              >
+                + {opt}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -236,7 +273,17 @@ export default function InteractionForm() {
         )}
       </section>
 
-      <section className="pt-6 mt-6 flex justify-end">
+      <section className="pt-6 mt-6 flex justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            dispatch(resetForm());
+            localStorage.removeItem('hcpInteractionDraft');
+          }}
+          className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors shadow-sm"
+        >
+          Clear All
+        </button>
         <button
           type="button"
           onClick={async () => {
