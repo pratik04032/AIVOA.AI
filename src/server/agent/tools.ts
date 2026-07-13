@@ -1,8 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { db } from "../db/index.js";
-import { hcps, interactions } from "../db/schema.js";
-import { eq, desc, like } from "drizzle-orm";
 
 export const logInteractionTool = tool(
   async (input) => {
@@ -50,7 +48,10 @@ export const editInteractionTool = tool(
 
 export const searchHcpsTool = tool(
   async ({ query }) => {
-    const results = await db.select().from(hcps).where(like(hcps.name, `%${query}%`));
+    const snapshot = await db.collection('hcps').get();
+    const results = snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter((hcp: any) => hcp.name && hcp.name.toLowerCase().includes(query.toLowerCase()));
     return JSON.stringify(results);
   },
   {
@@ -64,7 +65,12 @@ export const searchHcpsTool = tool(
 
 export const getInteractionHistoryTool = tool(
   async ({ hcpName }) => {
-    const history = await db.select().from(interactions).where(eq(interactions.hcpName, hcpName)).orderBy(desc(interactions.createdAt)).limit(5);
+    const snapshot = await db.collection('interactions')
+      .where('hcpName', '==', hcpName)
+      .orderBy('createdAt', 'desc')
+      .limit(5)
+      .get();
+    const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return JSON.stringify(history);
   },
   {
