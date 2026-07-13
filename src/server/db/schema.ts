@@ -12,6 +12,7 @@ export const interactions = sqliteTable("interactions", {
   sentiment: text("sentiment"),
   outcomes: text("outcomes"),
   followUpActions: text("follow_up_actions"),
+  summary: text("summary"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 

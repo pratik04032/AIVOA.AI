@@ -1,11 +1,13 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState, updateField, InteractionState } from '../store.ts';
+import { RootState, updateField, resetForm, InteractionState } from '../store.ts';
 import { useState } from 'react';
+import RecentInteractions from './RecentInteractions.tsx';
 
 export default function InteractionForm() {
   const dispatch = useDispatch();
   const formState = useSelector((state: RootState) => state.interaction);
   const [isSummarizing, setIsSummarizing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleChange = (field: keyof InteractionState, value: string) => {
     dispatch(updateField({ field, value }));
@@ -217,6 +219,30 @@ export default function InteractionForm() {
           </div>
         )}
       </section>
+
+      <section className="pt-6 mt-6 flex justify-end">
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await fetch('/api/hcps/interactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formState),
+              });
+              dispatch(resetForm());
+              setRefreshTrigger(prev => prev + 1);
+            } catch (error) {
+              console.error('Failed to save interaction', error);
+            }
+          }}
+          className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+        >
+          Save Interaction
+        </button>
+      </section>
+
+      <RecentInteractions refreshTrigger={refreshTrigger} />
     </div>
   );
 }

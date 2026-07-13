@@ -30,6 +30,7 @@ if (count.c === 0) {
       sentiment TEXT,
       outcomes TEXT,
       follow_up_actions TEXT,
+      summary TEXT,
       created_at INTEGER
     );
     INSERT INTO hcps (name, specialty) VALUES ('Dr. Smith', 'Oncology');
