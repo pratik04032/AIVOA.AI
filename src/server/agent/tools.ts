@@ -18,6 +18,7 @@ export const logInteractionTool = tool(
       attendees: z.string().optional().describe("Attendees names"),
       topicsDiscussed: z.string().optional().describe("Topics discussed"),
       materialsShared: z.string().optional().describe("Materials shared"),
+      samplesDistributed: z.string().optional().describe("Samples distributed"),
       sentiment: z.enum(["Positive", "Neutral", "Negative"]).optional().describe("Inferred sentiment"),
       outcomes: z.string().optional().describe("Outcomes or agreements"),
       followUpActions: z.string().optional().describe("Next steps or tasks")
@@ -40,6 +41,7 @@ export const editInteractionTool = tool(
       attendees: z.string().optional(),
       topicsDiscussed: z.string().optional(),
       materialsShared: z.string().optional(),
+      samplesDistributed: z.string().optional(),
       sentiment: z.enum(["Positive", "Neutral", "Negative"]).optional(),
       outcomes: z.string().optional(),
       followUpActions: z.string().optional()

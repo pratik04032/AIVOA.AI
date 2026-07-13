@@ -58,6 +58,7 @@ hcpRouter.post("/interactions", async (req, res) => {
       attendees: data.attendees,
       topicsDiscussed: data.topicsDiscussed,
       materialsShared: data.materialsShared,
+      samplesDistributed: data.samplesDistributed,
       sentiment: data.sentiment,
       outcomes: data.outcomes,
       followUpActions: data.followUpActions,

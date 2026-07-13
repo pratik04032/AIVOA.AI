@@ -118,17 +118,33 @@ export default function InteractionForm() {
 
       <section className="bg-slate-50 p-5 rounded-lg border border-slate-100">
         <h3 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider">Materials & Samples</h3>
-        <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
-          <span className="text-sm text-slate-600 font-medium">Materials Shared</span>
-          <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">🔍 Search/Add</button>
+        <div className="mb-4">
+          <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
+            <span className="text-sm text-slate-600 font-medium">Materials Shared</span>
+            <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">🔍 Search/Add</button>
+          </div>
+          <input
+            type="text"
+            placeholder="e.g. Product Brochure, Trial Kit..."
+            value={formState.materialsShared}
+            onChange={(e) => handleChange('materialsShared', e.target.value)}
+            className={inputClasses}
+          />
         </div>
-        <div className="text-xs text-slate-400 mb-4 italic">No materials added.</div>
         
-        <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
-          <span className="text-sm text-slate-600 font-medium">Samples Distributed</span>
-          <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">➕ Add Sample</button>
+        <div>
+          <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
+            <span className="text-sm text-slate-600 font-medium">Samples Distributed</span>
+            <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">➕ Add Sample</button>
+          </div>
+          <input
+            type="text"
+            placeholder="e.g. 5x 10mg Tablets..."
+            value={formState.samplesDistributed}
+            onChange={(e) => handleChange('samplesDistributed', e.target.value)}
+            className={inputClasses}
+          />
         </div>
-        <div className="text-xs text-slate-400 italic">No samples added.</div>
       </section>
 
       <section>
@@ -231,6 +247,7 @@ export default function InteractionForm() {
                 body: JSON.stringify(formState),
               });
               dispatch(resetForm());
+              localStorage.removeItem('hcpInteractionDraft');
               setRefreshTrigger(prev => prev + 1);
             } catch (error) {
               console.error('Failed to save interaction', error);

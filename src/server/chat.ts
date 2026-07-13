@@ -9,7 +9,7 @@ chatRouter.post("/summarize", async (req, res) => {
   try {
     const { formState } = req.body;
     const llm = new ChatGoogleGenerativeAI({
-      model: "gemini-2.5-pro",
+      model: "gemini-2.5-flash",
       apiKey: process.env.GEMINI_API_KEY,
       temperature: 0.2,
     });

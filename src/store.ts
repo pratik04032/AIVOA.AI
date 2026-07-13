@@ -8,6 +8,7 @@ export interface InteractionState {
   attendees: string;
   topicsDiscussed: string;
   materialsShared: string;
+  samplesDistributed: string;
   sentiment: string;
   outcomes: string;
   followUpActions: string;
@@ -22,6 +23,7 @@ const initialInteractionState: InteractionState = {
   attendees: '',
   topicsDiscussed: '',
   materialsShared: '',
+  samplesDistributed: '',
   sentiment: '',
   outcomes: '',
   followUpActions: '',
