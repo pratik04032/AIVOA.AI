@@ -11,6 +11,7 @@ export interface InteractionState {
   sentiment: string;
   outcomes: string;
   followUpActions: string;
+  executiveSummary: string;
 }
 
 const initialInteractionState: InteractionState = {
@@ -24,6 +25,7 @@ const initialInteractionState: InteractionState = {
   sentiment: '',
   outcomes: '',
   followUpActions: '',
+  executiveSummary: '',
 };
 
 export const interactionSlice = createSlice({

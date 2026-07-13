@@ -1,12 +1,33 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, updateField, InteractionState } from '../store.ts';
+import { useState } from 'react';
 
 export default function InteractionForm() {
   const dispatch = useDispatch();
   const formState = useSelector((state: RootState) => state.interaction);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   const handleChange = (field: keyof InteractionState, value: string) => {
     dispatch(updateField({ field, value }));
+  };
+
+  const handleSummarize = async () => {
+    setIsSummarizing(true);
+    try {
+      const response = await fetch('/api/chat/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formState }),
+      });
+      const data = await response.json();
+      if (data.summary) {
+        handleChange('executiveSummary', data.summary);
+      }
+    } catch (error) {
+      console.error('Failed to summarize', error);
+    } finally {
+      setIsSummarizing(false);
+    }
   };
 
   const inputClasses = "w-full px-3 py-2 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-slate-800 bg-white placeholder-slate-400 transition-colors";
@@ -166,6 +187,36 @@ export default function InteractionForm() {
           </ul>
         </section>
       )}
+
+      <section className="pt-6 mt-6 border-t border-slate-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Executive Summary</h3>
+          <button
+            type="button"
+            onClick={handleSummarize}
+            disabled={isSummarizing}
+            className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-900 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+          >
+            {isSummarizing ? (
+              <>
+                 <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                 Generating...
+              </>
+            ) : (
+              <>✨ Auto-Summarize</>
+            )}
+          </button>
+        </div>
+        {formState.executiveSummary ? (
+          <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-sm text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+            {formState.executiveSummary}
+          </div>
+        ) : (
+          <div className="p-6 bg-slate-50 border border-slate-200 border-dashed rounded-lg text-sm text-slate-400 italic text-center">
+            Click Auto-Summarize to generate a brief, AI-powered overview of this interaction.
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -1,8 +1,33 @@
 import { Router } from "express";
 import { agent } from "./agent/index.js";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 export const chatRouter = Router();
+
+chatRouter.post("/summarize", async (req, res) => {
+  try {
+    const { formState } = req.body;
+    const llm = new ChatGoogleGenerativeAI({
+      modelName: "gemini-2.5-pro",
+      apiKey: process.env.GEMINI_API_KEY,
+      temperature: 0.2,
+    });
+
+    const prompt = `You are an AI assistant helping a life science field representative.
+Summarize the following interaction details into a brief, professional bulleted list.
+Focus on key takeaways, sentiments, and follow-ups. Keep it very concise.
+
+Interaction Data:
+${JSON.stringify(formState, null, 2)}`;
+
+    const response = await llm.invoke([new HumanMessage(prompt)]);
+    res.json({ summary: response.content });
+  } catch (error: any) {
+    console.error("Summarize error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 chatRouter.post("/", async (req, res) => {
   try {
