@@ -9,7 +9,7 @@ chatRouter.post("/summarize", async (req, res) => {
   try {
     const { formState } = req.body;
     const llm = new ChatGoogleGenerativeAI({
-      modelName: "gemini-2.5-pro",
+      model: "gemini-2.5-pro",
       apiKey: process.env.GEMINI_API_KEY,
       temperature: 0.2,
     });
@@ -21,7 +21,7 @@ Focus on key takeaways, sentiments, and follow-ups. Keep it very concise.
 Interaction Data:
 ${JSON.stringify(formState, null, 2)}`;
 
-    const response = await llm.invoke([new HumanMessage(prompt)]);
+    const response = await llm.invoke([new HumanMessage({ content: prompt })]);
     res.json({ summary: response.content });
   } catch (error: any) {
     console.error("Summarize error:", error);
@@ -34,21 +34,21 @@ chatRouter.post("/", async (req, res) => {
     const { messages, formState } = req.body;
     
     // Construct LangChain messages
-    const lcMessages = [
-      new SystemMessage(
-        "You are an AI assistant helping a life science field representative log interactions with Healthcare Professionals (HCPs).\n" +
+    const lcMessages: any[] = [
+      new SystemMessage({
+        content: "You are an AI assistant helping a life science field representative log interactions with Healthcare Professionals (HCPs).\n" +
         "You can use the provided tools to extract interaction data from the user's natural language input.\n" +
         "When the user wants to log an interaction, use the log_interaction tool.\n" +
         "When the user wants to edit specific fields, use the edit_interaction tool.\n" +
         "Current form state: " + JSON.stringify(formState)
-      )
+      })
     ];
 
     for (const m of messages) {
       if (m.role === "user") {
-        lcMessages.push(new HumanMessage(m.content));
+        lcMessages.push(new HumanMessage({ content: m.content as string }));
       } else if (m.role === "assistant") {
-        lcMessages.push(new AIMessage(m.content));
+        lcMessages.push(new AIMessage({ content: m.content as string }));
       }
     }
 
@@ -64,7 +64,7 @@ chatRouter.post("/", async (req, res) => {
     for (const msg of responseMessages) {
       if (msg._getType() === "tool") {
          if (msg.name === "log_interaction" || msg.name === "edit_interaction") {
-             const updates = JSON.parse(msg.content);
+             const updates = JSON.parse(msg.content as string);
              updatedFormState = { ...updatedFormState, ...updates };
          }
       }

@@ -1,6 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { db } from "../db/index.js";
+import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 
 export const logInteractionTool = tool(
   async (input) => {
@@ -47,11 +48,11 @@ export const editInteractionTool = tool(
 );
 
 export const searchHcpsTool = tool(
-  async ({ query }) => {
-    const snapshot = await db.collection('hcps').get();
+  async ({ query: searchQuery }) => {
+    const snapshot = await getDocs(collection(db, 'hcps'));
     const results = snapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter((hcp: any) => hcp.name && hcp.name.toLowerCase().includes(query.toLowerCase()));
+      .filter((hcp: any) => hcp.name && hcp.name.toLowerCase().includes(searchQuery.toLowerCase()));
     return JSON.stringify(results);
   },
   {
@@ -65,11 +66,8 @@ export const searchHcpsTool = tool(
 
 export const getInteractionHistoryTool = tool(
   async ({ hcpName }) => {
-    const snapshot = await db.collection('interactions')
-      .where('hcpName', '==', hcpName)
-      .orderBy('createdAt', 'desc')
-      .limit(5)
-      .get();
+    const q = query(collection(db, 'interactions'), where('hcpName', '==', hcpName), orderBy('createdAt', 'desc'), limit(5));
+    const snapshot = await getDocs(q);
     const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     return JSON.stringify(history);
   },
