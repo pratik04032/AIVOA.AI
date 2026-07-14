@@ -36,8 +36,8 @@ export const interactionSlice = createSlice({
   name: 'interaction',
   initialState: initialInteractionState,
   reducers: {
-    updateField: (state, action: PayloadAction<{ field: keyof InteractionState; value: string }>) => {
-      state[action.payload.field] = action.payload.value;
+    updateField: (state, action: PayloadAction<{ field: keyof InteractionState; value: any }>) => {
+      (state as any)[action.payload.field] = action.payload.value;
     },
     updateMultipleFields: (state, action: PayloadAction<Partial<InteractionState>>) => {
       const changedFields: string[] = [];

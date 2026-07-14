@@ -1,7 +1,19 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState, updateField, resetForm, clearHighlights, InteractionState } from '../store.ts';
+import { RootState, updateField, resetForm, clearHighlights, InteractionState, updateMultipleFields } from '../store.ts';
 import { useState, useEffect } from 'react';
 import RecentInteractions from './RecentInteractions.tsx';
+
+const FormGroup = ({ title, icon, children }: any) => (
+  <fieldset className="border border-slate-200 rounded-xl p-5 md:p-6 bg-white shadow-sm mb-8">
+    <legend className="text-xs font-bold text-slate-800 tracking-wider uppercase px-3 ml-2 flex items-center gap-2 bg-slate-50 rounded-lg border border-slate-200 py-1.5 shadow-sm">
+      <span className="text-base">{icon}</span>
+      {title}
+    </legend>
+    <div className="mt-2">
+      {children}
+    </div>
+  </fieldset>
+);
 
 export default function InteractionForm() {
   const dispatch = useDispatch();
@@ -9,6 +21,37 @@ export default function InteractionForm() {
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{title: string, message: string} | null>(null);
+
+  useEffect(() => {
+    if (formState.hcpName?.trim()) {
+      setLoadingHistory(true);
+      fetch(`/api/hcps/${encodeURIComponent(formState.hcpName)}/interactions`)
+        .then(res => res.json())
+        .then(data => setHistory(data))
+        .catch(err => console.error("Failed to load history", err))
+        .finally(() => setLoadingHistory(false));
+    } else {
+      setHistory([]);
+    }
+  }, [formState.hcpName]);
+
+  const calculateCompletion = () => {
+    let score = 0;
+    if (formState.hcpName?.trim()) score += 20;
+    if (formState.date?.trim()) score += 20;
+    if (formState.interactionType?.trim()) score += 10;
+    if (formState.time?.trim()) score += 10;
+    if (formState.topicsDiscussed?.trim()) score += 20;
+    if (formState.outcomes?.trim()) score += 10;
+    if (formState.followUpActions?.trim()) score += 10;
+    return score;
+  };
+
+  const completionScore = calculateCompletion();
+  
   useEffect(() => {
     if (formState.highlightedFields?.length > 0) {
       const timer = setTimeout(() => {
@@ -53,6 +96,7 @@ export default function InteractionForm() {
 
   const applyTemplate = (templateName: string) => {
     let templateData: Partial<InteractionState> = {};
+    
     switch (templateName) {
       case 'Initial Meeting':
         templateData = { interactionType: 'Meeting', topicsDiscussed: 'Introduction and general product overview.', sentiment: 'Neutral' };
@@ -92,9 +136,8 @@ export default function InteractionForm() {
         </div>
       </section>
 
-      <section>
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Interaction Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <FormGroup title="Basic Information" icon="📋">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className={labelClasses}>HCP Name <span className="text-red-500">*</span></label>
             <div className="relative w-full">
@@ -115,6 +158,35 @@ export default function InteractionForm() {
               </datalist>
               <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
+            
+            {formState.hcpName?.trim() && (
+              <div className="mt-3 bg-blue-50/50 rounded-lg border border-blue-100 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-[10px] font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Recent History
+                  </h4>
+                  {loadingHistory && <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>}
+                </div>
+                {!loadingHistory && history.length === 0 && (
+                  <p className="text-xs text-blue-600/70 italic">No previous interactions found.</p>
+                )}
+                {!loadingHistory && history.length > 0 && (
+                  <div className="space-y-2 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
+                    {history.slice(0, 3).map((item, idx) => (
+                      <div key={idx} className="text-xs bg-white rounded p-2 border border-blue-100/50 flex justify-between items-start gap-2">
+                        <div>
+                          <span className="font-semibold text-slate-700">{item.interactionType}</span>
+                          <span className="text-slate-500 block truncate max-w-[150px]" title={item.topicsDiscussed}>{item.topicsDiscussed || 'No topics listed'}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">{new Date(item.date || item.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
           </div>
           <div>
             <label className={labelClasses}>Interaction Type</label>
@@ -130,10 +202,8 @@ export default function InteractionForm() {
             </select>
           </div>
         </div>
-      </section>
 
-      <section>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className={labelClasses}>Date <span className="text-red-500">*</span></label>
             <input
@@ -153,9 +223,7 @@ export default function InteractionForm() {
             />
           </div>
         </div>
-      </section>
 
-      <section className="space-y-6">
         <div>
           <label className={labelClasses}>Attendees</label>
           <input
@@ -165,8 +233,11 @@ export default function InteractionForm() {
             onChange={(e) => handleChange('attendees', e.target.value)}
             className={getInputClasses('attendees')}
           />
+          <p className="text-[10px] text-slate-500 mt-1">Separate multiple names with commas.</p>
         </div>
+      </FormGroup>
 
+      <FormGroup title="Discussion Notes" icon="💬">
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Topics Discussed</label>
@@ -179,15 +250,17 @@ export default function InteractionForm() {
             onChange={(e) => handleChange('topicsDiscussed', e.target.value)}
             className={getInputClasses('topicsDiscussed')}
           />
-          <button className="mt-2 text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
-            <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
-          </button>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[10px] text-slate-500">Include main questions asked and objections raised.</p>
+            <button className="text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
+              <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
+            </button>
+          </div>
         </div>
-      </section>
+      </FormGroup>
 
-      <section className="bg-slate-50 p-5 rounded-lg border border-slate-100">
-        <h3 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider">Materials & Samples</h3>
-        <div className="mb-4">
+      <FormGroup title="Materials & Samples" icon="📦">
+        <div className="mb-6">
           <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
             <span className="text-sm text-slate-600 font-medium">Materials Shared</span>
             <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">🔍 Search/Add</button>
@@ -251,9 +324,10 @@ export default function InteractionForm() {
             ))}
           </div>
         </div>
-      </section>
+      </FormGroup>
 
-      <section className={`p-4 -mx-4 rounded-lg transition-all duration-500 ${formState.highlightedFields?.includes('sentiment') ? 'bg-green-50 ring-2 ring-green-400/30' : ''}`}>
+      <FormGroup title="Outcomes & Next Steps" icon="🎯">
+        <div className={`p-4 -mx-4 rounded-lg transition-all duration-500 mb-6 ${formState.highlightedFields?.includes('sentiment') ? 'bg-green-50 ring-2 ring-green-400/30' : ''}`}>
         <label className={labelClasses}>Observed/Inferred HCP Sentiment</label>
         <div className="flex space-x-6 mt-2">
           {['Positive', 'Neutral', 'Negative'].map((sentiment) => (
@@ -270,10 +344,10 @@ export default function InteractionForm() {
             </label>
           ))}
         </div>
-      </section>
-
-      <section className="space-y-6">
-        <div>
+        </div>
+        
+        <div className="space-y-6">
+          <div>
           <div className="flex justify-between items-center mb-1.5">
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Outcomes</label>
             <span className="text-[10px] text-slate-400 font-mono">{formState.outcomes.length} chars</span>
@@ -285,6 +359,7 @@ export default function InteractionForm() {
             onChange={(e) => handleChange('outcomes', e.target.value)}
             className={getInputClasses('outcomes')}
           />
+          <p className="text-[10px] text-slate-500 mt-1">What was agreed upon? e.g., "Agreed to review literature by Friday."</p>
         </div>
 
         <div>
@@ -299,8 +374,10 @@ export default function InteractionForm() {
             onChange={(e) => handleChange('followUpActions', e.target.value)}
             className={getInputClasses('followUpActions')}
           />
+          <p className="text-[10px] text-slate-500 mt-1">Specific tasks to be done before the next meeting.</p>
         </div>
-      </section>
+        </div>
+      </FormGroup>
       
       {formState.followUpActions && (
         <section className="p-4 bg-blue-50 border border-blue-100 rounded-lg shadow-sm">
@@ -373,6 +450,8 @@ export default function InteractionForm() {
               dispatch(resetForm());
               localStorage.removeItem('hcpInteractionDraft');
               setRefreshTrigger(prev => prev + 1);
+              setToastMessage({ title: 'Success', message: 'Interaction successfully saved to the CRM.' });
+              setTimeout(() => setToastMessage(null), 3000);
             } catch (error) {
               console.error('Failed to save interaction', error);
             }
@@ -384,6 +463,21 @@ export default function InteractionForm() {
       </section>
 
       <RecentInteractions refreshTrigger={refreshTrigger} />
+
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 bg-white border border-green-200 shadow-xl rounded-lg p-4 flex gap-3 items-start animate-in slide-in-from-bottom-5 fade-in duration-300 z-50 max-w-sm">
+          <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-800">{toastMessage.title}</h4>
+            <p className="text-xs text-slate-600 mt-1">{toastMessage.message}</p>
+          </div>
+          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-slate-600 ml-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
