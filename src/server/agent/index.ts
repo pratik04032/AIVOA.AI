@@ -5,10 +5,9 @@ import { tools } from "./tools.js";
 
 // Ensure we have an API key. We will pass this at initialization or rely on environment variables.
 const model = new ChatGoogleGenerativeAI({
-  model: "gemini-3.1-pro-preview",
+  model: "gemini-2.5-flash",
   apiKey: process.env.GEMINI_API_KEY,
   temperature: 0,
-  thinkingConfig: { thinkingLevel: "HIGH" }
 }).bindTools(tools);
 
 const toolNode = new ToolNode(tools);
