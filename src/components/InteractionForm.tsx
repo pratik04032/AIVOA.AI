@@ -96,13 +96,24 @@ export default function InteractionForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className={labelClasses}>HCP Name <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              placeholder="Search or select HCP..."
-              value={formState.hcpName}
-              onChange={(e) => handleChange('hcpName', e.target.value)}
-              className={getInputClasses('hcpName')}
-            />
+            <div className="relative w-full">
+              <input
+                type="text"
+                list="hcp-search-options"
+                placeholder="Search or select HCP..."
+                value={formState.hcpName}
+                onChange={(e) => handleChange('hcpName', e.target.value)}
+                className={`${getInputClasses('hcpName')} pl-9`}
+              />
+              <datalist id="hcp-search-options">
+                <option value="Dr. Sarah Jenkins" />
+                <option value="Dr. Michael Chen" />
+                <option value="Dr. Emily Roberts" />
+                <option value="Dr. James Wilson" />
+                <option value="Dr. Lisa Patel" />
+              </datalist>
+              <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
           </div>
           <div>
             <label className={labelClasses}>Interaction Type</label>

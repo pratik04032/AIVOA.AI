@@ -75,19 +75,28 @@ export default function ChatAssistant() {
       </div>
 
       <div className="p-4 bg-white border-t border-slate-200 flex flex-col gap-3 shrink-0">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder="Describe interaction..."
-          rows={2}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50 resize-none text-slate-800 placeholder-slate-400 transition-colors"
-        />
+        <div className="relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Describe interaction..."
+            rows={2}
+            className="w-full pl-3 pr-10 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50 resize-none text-slate-800 placeholder-slate-400 transition-colors"
+          />
+          <button 
+            type="button" 
+            className="absolute right-2 bottom-3 text-slate-400 hover:text-blue-500 transition-colors"
+            title="Voice Input"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+          </button>
+        </div>
         <div className="flex justify-between items-center">
           <span className="text-[10px] text-slate-400 font-medium">Press Enter to send</span>
           <button
