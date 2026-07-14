@@ -13,6 +13,7 @@ export interface InteractionState {
   outcomes: string;
   followUpActions: string;
   executiveSummary: string;
+  highlightedFields: string[];
 }
 
 const initialInteractionState: InteractionState = {
@@ -28,6 +29,7 @@ const initialInteractionState: InteractionState = {
   outcomes: '',
   followUpActions: '',
   executiveSummary: '',
+  highlightedFields: [],
 };
 
 export const interactionSlice = createSlice({
@@ -38,13 +40,23 @@ export const interactionSlice = createSlice({
       state[action.payload.field] = action.payload.value;
     },
     updateMultipleFields: (state, action: PayloadAction<Partial<InteractionState>>) => {
-      return { ...state, ...action.payload };
+      const changedFields: string[] = [];
+      Object.keys(action.payload).forEach((key) => {
+        const k = key as keyof InteractionState;
+        if (k !== 'highlightedFields' && state[k] !== action.payload[k]) {
+          changedFields.push(k);
+        }
+      });
+      return { ...state, ...action.payload, highlightedFields: changedFields };
+    },
+    clearHighlights: (state) => {
+      state.highlightedFields = [];
     },
     resetForm: () => initialInteractionState,
   },
 });
 
-export const { updateField, updateMultipleFields, resetForm } = interactionSlice.actions;
+export const { updateField, updateMultipleFields, clearHighlights, resetForm } = interactionSlice.actions;
 
 export interface ChatMessage {
   role: 'user' | 'assistant';

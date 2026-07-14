@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState, updateField, resetForm, InteractionState } from '../store.ts';
-import { useState } from 'react';
+import { RootState, updateField, resetForm, clearHighlights, InteractionState } from '../store.ts';
+import { useState, useEffect } from 'react';
 import RecentInteractions from './RecentInteractions.tsx';
 
 export default function InteractionForm() {
@@ -8,6 +8,15 @@ export default function InteractionForm() {
   const formState = useSelector((state: RootState) => state.interaction);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    if (formState.highlightedFields?.length > 0) {
+      const timer = setTimeout(() => {
+        dispatch(clearHighlights());
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [formState.highlightedFields, dispatch]);
 
   const handleChange = (field: keyof InteractionState, value: string) => {
     dispatch(updateField({ field, value }));
@@ -32,7 +41,15 @@ export default function InteractionForm() {
     }
   };
 
-  const inputClasses = "w-full px-3 py-2 border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm text-slate-800 bg-white placeholder-slate-400 transition-colors";
+  const getInputClasses = (field: keyof InteractionState) => {
+    const isHighlighted = formState.highlightedFields?.includes(field);
+    return `w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm text-slate-800 bg-white placeholder-slate-400 transition-all duration-500 ${
+      isHighlighted
+        ? 'border-green-400 ring-4 ring-green-400/30 bg-green-50'
+        : 'border-slate-200 focus:border-blue-500'
+    }`;
+  };
+
   const labelClasses = "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
 
   return (
@@ -47,7 +64,7 @@ export default function InteractionForm() {
               placeholder="Search or select HCP..."
               value={formState.hcpName}
               onChange={(e) => handleChange('hcpName', e.target.value)}
-              className={inputClasses}
+              className={getInputClasses('hcpName')}
             />
           </div>
           <div>
@@ -55,7 +72,7 @@ export default function InteractionForm() {
             <select
               value={formState.interactionType}
               onChange={(e) => handleChange('interactionType', e.target.value)}
-              className={inputClasses}
+              className={getInputClasses('interactionType')}
             >
               <option value="">Select...</option>
               <option value="Meeting">Meeting</option>
@@ -74,7 +91,7 @@ export default function InteractionForm() {
               type="date"
               value={formState.date}
               onChange={(e) => handleChange('date', e.target.value)}
-              className={inputClasses}
+              className={getInputClasses('date')}
             />
           </div>
           <div>
@@ -83,7 +100,7 @@ export default function InteractionForm() {
               type="time"
               value={formState.time}
               onChange={(e) => handleChange('time', e.target.value)}
-              className={inputClasses}
+              className={getInputClasses('time')}
             />
           </div>
         </div>
@@ -97,7 +114,7 @@ export default function InteractionForm() {
             placeholder="Enter names or search..."
             value={formState.attendees}
             onChange={(e) => handleChange('attendees', e.target.value)}
-            className={inputClasses}
+            className={getInputClasses('attendees')}
           />
         </div>
 
@@ -108,7 +125,7 @@ export default function InteractionForm() {
             rows={3}
             value={formState.topicsDiscussed}
             onChange={(e) => handleChange('topicsDiscussed', e.target.value)}
-            className={inputClasses}
+            className={getInputClasses('topicsDiscussed')}
           />
           <button className="mt-2 text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
             <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
@@ -129,7 +146,7 @@ export default function InteractionForm() {
             placeholder="e.g. Product Brochure, Trial Kit..."
             value={formState.materialsShared}
             onChange={(e) => handleChange('materialsShared', e.target.value)}
-            className={inputClasses}
+            className={getInputClasses('materialsShared')}
           />
           <datalist id="materials-options">
             <option value="Product Brochure" />
@@ -162,7 +179,7 @@ export default function InteractionForm() {
             placeholder="e.g. 5x 10mg Tablets..."
             value={formState.samplesDistributed}
             onChange={(e) => handleChange('samplesDistributed', e.target.value)}
-            className={inputClasses}
+            className={getInputClasses('samplesDistributed')}
           />
           <datalist id="samples-options">
             <option value="10mg Tablets (Box of 30)" />
@@ -184,7 +201,7 @@ export default function InteractionForm() {
         </div>
       </section>
 
-      <section>
+      <section className={`p-4 -mx-4 rounded-lg transition-all duration-500 ${formState.highlightedFields?.includes('sentiment') ? 'bg-green-50 ring-2 ring-green-400/30' : ''}`}>
         <label className={labelClasses}>Observed/Inferred HCP Sentiment</label>
         <div className="flex space-x-6 mt-2">
           {['Positive', 'Neutral', 'Negative'].map((sentiment) => (
@@ -211,7 +228,7 @@ export default function InteractionForm() {
             rows={2}
             value={formState.outcomes}
             onChange={(e) => handleChange('outcomes', e.target.value)}
-            className={inputClasses}
+            className={getInputClasses('outcomes')}
           />
         </div>
 
@@ -222,7 +239,7 @@ export default function InteractionForm() {
             rows={2}
             value={formState.followUpActions}
             onChange={(e) => handleChange('followUpActions', e.target.value)}
-            className={inputClasses}
+            className={getInputClasses('followUpActions')}
           />
         </div>
       </section>
