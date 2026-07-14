@@ -36,6 +36,7 @@ export default function InteractionForm() {
       }
     } catch (error) {
       console.error('Failed to summarize', error);
+      alert('Failed to generate summary. Please try again or check your connection.');
     } finally {
       setIsSummarizing(false);
     }
