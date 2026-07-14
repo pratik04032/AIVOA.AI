@@ -13,15 +13,21 @@ function AppContent() {
   const dispatch = useDispatch();
   const formState = useSelector((state: RootState) => state.interaction);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const initialLoadDone = useRef(false);
 
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('hcpInteractionDraft');
+    const savedTime = localStorage.getItem('hcpInteractionDraftTime');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         dispatch(updateMultipleFields(parsed));
+        if (savedTime) {
+          setLastSavedTime(savedTime);
+          setSaveStatus('saved');
+        }
       } catch (e) {
         console.error('Failed to parse draft from local storage', e);
       }
@@ -36,11 +42,11 @@ function AppContent() {
     setSaveStatus('saving');
     const timeoutId = setTimeout(() => {
       localStorage.setItem('hcpInteractionDraft', JSON.stringify(formState));
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      localStorage.setItem('hcpInteractionDraftTime', now);
+      setLastSavedTime(now);
       setSaveStatus('saved');
-      
-      // Clear the saved status message after a few seconds
-      setTimeout(() => setSaveStatus(''), 2000);
-    }, 500); // debounce save
+    }, 1500); // debounce save 1.5s for "smart" feel
 
     return () => clearTimeout(timeoutId);
   }, [formState]);
@@ -54,8 +60,8 @@ function AppContent() {
           <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded">Active</span>
         </div>
         <div>
-          {saveStatus === 'saving' && <span className="text-xs text-slate-400">Saving...</span>}
-          {saveStatus === 'saved' && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>Draft saved</span>}
+          {saveStatus === 'saving' && <span className="text-xs text-slate-400">Auto-saving draft...</span>}
+          {saveStatus === 'saved' && lastSavedTime && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>Draft saved at {lastSavedTime}</span>}
         </div>
       </header>
 

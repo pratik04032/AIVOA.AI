@@ -50,10 +50,47 @@ export default function InteractionForm() {
     }`;
   };
 
+  const applyTemplate = (templateName: string) => {
+    let templateData: Partial<InteractionState> = {};
+    switch (templateName) {
+      case 'Initial Meeting':
+        templateData = { interactionType: 'Meeting', topicsDiscussed: 'Introduction and general product overview.', sentiment: 'Neutral' };
+        break;
+      case 'Routine Follow-up':
+        templateData = { interactionType: 'Meeting', topicsDiscussed: 'Efficacy check and patient feedback.', sentiment: 'Positive' };
+        break;
+      case 'Product Launch':
+        templateData = { interactionType: 'Meeting', topicsDiscussed: 'Introduced new product features and reviewed latest clinical data.', materialsShared: 'Product Brochure', sentiment: 'Neutral' };
+        break;
+      case 'Adverse Event':
+        templateData = { interactionType: 'Call', topicsDiscussed: 'Reported safety concern and discussed adverse event protocols.', followUpActions: 'Report to pharmacovigilance team.', sentiment: 'Negative' };
+        break;
+    }
+    if (!formState.date) {
+      templateData.date = new Date().toISOString().split('T')[0];
+    }
+    dispatch(updateMultipleFields(templateData));
+  };
+
   const labelClasses = "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
+      <section className="mb-8">
+        <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Meeting Templates</h3>
+        <div className="flex flex-wrap gap-2">
+          {['Initial Meeting', 'Routine Follow-up', 'Product Launch', 'Adverse Event'].map(t => (
+            <button
+              key={t}
+              onClick={() => applyTemplate(t)}
+              className="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors shadow-sm"
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section>
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Interaction Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -119,7 +156,10 @@ export default function InteractionForm() {
         </div>
 
         <div>
-          <label className={labelClasses}>Topics Discussed</label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Topics Discussed</label>
+            <span className="text-[10px] text-slate-400 font-mono">{formState.topicsDiscussed.length} chars</span>
+          </div>
           <textarea
             placeholder="Enter key discussion points..."
             rows={3}
@@ -222,7 +262,10 @@ export default function InteractionForm() {
 
       <section className="space-y-6">
         <div>
-          <label className={labelClasses}>Outcomes</label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Outcomes</label>
+            <span className="text-[10px] text-slate-400 font-mono">{formState.outcomes.length} chars</span>
+          </div>
           <textarea
             placeholder="Key outcomes or agreements..."
             rows={2}
@@ -233,7 +276,10 @@ export default function InteractionForm() {
         </div>
 
         <div>
-          <label className={labelClasses}>Follow-up Actions</label>
+          <div className="flex justify-between items-center mb-1.5">
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Follow-up Actions</label>
+            <span className="text-[10px] text-slate-400 font-mono">{formState.followUpActions.length} chars</span>
+          </div>
           <textarea
             placeholder="Enter next steps or tasks..."
             rows={2}
