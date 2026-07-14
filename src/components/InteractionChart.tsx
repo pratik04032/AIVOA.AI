@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 
 interface Interaction {
   id: string;
   createdAt: string;
   date: string;
+  hcpName?: string;
+  interactionType?: string;
 }
 
 interface InteractionChartProps {
@@ -15,8 +17,37 @@ export default function InteractionChart({ interactions }: InteractionChartProps
   const chartRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  const { totalInteractions, uniqueHCPs, mostCommonType } = useMemo(() => {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
+
+    const recentInteractions = interactions.filter(i => {
+      const d = new Date(i.date || i.createdAt);
+      return d >= thirtyDaysAgo && d <= today;
+    });
+
+    const uniqueHCPSet = new Set(recentInteractions.map(i => i.hcpName || "Unknown"));
+    
+    const typeCounts: Record<string, number> = {};
+    recentInteractions.forEach(i => {
+      const type = i.interactionType || 'Unknown';
+      typeCounts[type] = (typeCounts[type] || 0) + 1;
+    });
+    const mostCommon = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+    return {
+      totalInteractions: recentInteractions.length,
+      uniqueHCPs: uniqueHCPSet.size,
+      mostCommonType: mostCommon
+    };
+  }, [interactions]);
+
   useEffect(() => {
     if (!chartRef.current || !wrapperRef.current || interactions.length === 0) return;
+
 
     const renderChart = () => {
       // Clear previous chart
@@ -141,8 +172,24 @@ export default function InteractionChart({ interactions }: InteractionChartProps
   if (interactions.length === 0) return null;
 
   return (
-    <div className="mb-6 p-4 bg-white border border-slate-200 rounded-lg shadow-sm" ref={wrapperRef}>
-      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Interaction Frequency (Last 30 Days)</h4>
+    <div className="mb-6 p-5 bg-white border border-slate-200 rounded-lg shadow-sm" ref={wrapperRef}>
+      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Interaction Summary (Last 30 Days)</h4>
+      
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-lg">
+          <div className="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wide">Total Interactions</div>
+          <div className="text-2xl font-bold text-slate-800">{totalInteractions}</div>
+        </div>
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-lg">
+          <div className="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wide">Unique HCPs</div>
+          <div className="text-2xl font-bold text-slate-800">{uniqueHCPs}</div>
+        </div>
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-lg">
+          <div className="text-xs text-slate-500 font-medium mb-1 uppercase tracking-wide">Most Common</div>
+          <div className="text-lg font-bold text-slate-800 mt-1">{mostCommonType}</div>
+        </div>
+      </div>
+
       <div ref={chartRef} className="w-full h-[180px]" />
     </div>
   );

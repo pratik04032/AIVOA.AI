@@ -41,7 +41,7 @@ export default function InteractionForm() {
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Interaction Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelClasses}>HCP Name</label>
+            <label className={labelClasses}>HCP Name <span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Search or select HCP..."
@@ -69,7 +69,7 @@ export default function InteractionForm() {
       <section>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className={labelClasses}>Date</label>
+            <label className={labelClasses}>Date <span className="text-red-500">*</span></label>
             <input
               type="date"
               value={formState.date}
@@ -286,7 +286,9 @@ export default function InteractionForm() {
         </button>
         <button
           type="button"
+          disabled={!formState.hcpName || !formState.date}
           onClick={async () => {
+            if (!formState.hcpName || !formState.date) return;
             try {
               await fetch('/api/hcps/interactions', {
                 method: 'POST',
@@ -300,7 +302,7 @@ export default function InteractionForm() {
               console.error('Failed to save interaction', error);
             }
           }}
-          className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+          className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-lg ${!formState.hcpName || !formState.date ? 'bg-blue-400 text-white cursor-not-allowed shadow-blue-400/20' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'}`}
         >
           Save Interaction
         </button>
