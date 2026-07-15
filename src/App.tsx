@@ -7,6 +7,8 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import { store, RootState, updateMultipleFields } from './store.ts';
 import InteractionForm from './components/InteractionForm.tsx';
 import ChatAssistant from './components/ChatAssistant.tsx';
+import HCPPerformanceOverlay from './components/HCPPerformanceOverlay.tsx';
+import PrintInteraction from './components/PrintInteraction.tsx';
 import { useEffect, useState, useRef } from 'react';
 
 function AppContent() {
@@ -14,6 +16,7 @@ function AppContent() {
   const formState = useSelector((state: RootState) => state.interaction);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const [showPerformanceOverlay, setShowPerformanceOverlay] = useState(false);
   const initialLoadDone = useRef(false);
 
   // Load from localStorage on mount
@@ -52,21 +55,31 @@ function AppContent() {
   }, [formState]);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-slate-50 font-sans overflow-hidden text-slate-900">
+    <div className="flex flex-col h-screen w-full bg-slate-50 font-sans overflow-hidden text-slate-900 print:h-auto print:bg-white print:block">
+      <PrintInteraction />
       {/* Header */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0 print:hidden">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-slate-800">Log HCP Interaction</h1>
           <span className="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold uppercase rounded">Active</span>
         </div>
-        <div>
-          {saveStatus === 'saving' && <span className="text-xs text-slate-400">Auto-saving draft...</span>}
-          {saveStatus === 'saved' && lastSavedTime && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>Draft saved at {lastSavedTime}</span>}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowPerformanceOverlay(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors rounded-lg text-sm font-semibold border border-indigo-200"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            Performance
+          </button>
+          <div className="flex flex-col items-end">
+            {saveStatus === 'saving' && <span className="text-xs text-slate-400">Auto-saving draft...</span>}
+            {saveStatus === 'saved' && lastSavedTime && <span className="text-xs text-green-600 font-medium flex items-center gap-1"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>Draft saved at {lastSavedTime}</span>}
+          </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden print:hidden">
         
         {/* Viewer Split */}
         <div className="flex-1 flex overflow-hidden">
@@ -99,6 +112,10 @@ function AppContent() {
           </div>
         </div>
       </main>
+      
+      {showPerformanceOverlay && (
+        <HCPPerformanceOverlay onClose={() => setShowPerformanceOverlay(false)} />
+      )}
     </div>
   );
 }
