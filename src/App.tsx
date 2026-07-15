@@ -24,6 +24,7 @@ function AppContent() {
   const [showPerformanceOverlay, setShowPerformanceOverlay] = useState(false);
   const [showInteractionMap, setShowInteractionMap] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'assistant' | 'notes'>('assistant');
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const initialLoadDone = useRef(false);
 
   const handleManualSync = () => {
@@ -105,6 +106,13 @@ function AppContent() {
             {t.syncNow}
           </button>
           <button
+            onClick={() => setIsFocusMode(!isFocusMode)}
+            className={`flex items-center gap-2 px-3 py-1.5 transition-colors rounded-lg text-sm font-semibold border ${isFocusMode ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'}`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            {isFocusMode ? 'Exit Focus' : 'Focus Mode'}
+          </button>
+          <button
             onClick={() => setShowPerformanceOverlay(true)}
             className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors rounded-lg text-sm font-semibold border border-indigo-200"
           >
@@ -125,7 +133,7 @@ function AppContent() {
         <div className="flex-1 flex overflow-hidden">
           {/* Left Form Side (Mock Preview style) */}
           <div className="flex-1 bg-slate-200 p-4 sm:p-8 flex justify-center overflow-hidden">
-            <div className="w-full max-w-4xl bg-white shadow-2xl h-full flex flex-col overflow-hidden rounded-md sm:rounded-lg">
+            <div className={`w-full bg-white shadow-2xl h-full flex flex-col overflow-hidden rounded-md sm:rounded-lg transition-all duration-300 ${isFocusMode ? 'max-w-6xl' : 'max-w-4xl'}`}>
               <div className="h-12 bg-slate-50 border-b border-slate-100 flex items-center justify-between px-6 shrink-0">
                 <div className="flex gap-2">
                   <div className="w-3 h-3 bg-slate-200 rounded-full"></div>
@@ -140,26 +148,28 @@ function AppContent() {
           </div>
 
           {/* Right Chat Side (Action Pane style) */}
-          <div className="w-80 sm:w-96 bg-white border-l border-slate-200 flex flex-col shrink-0 transition-all">
-            <div className="flex border-b border-slate-200 bg-slate-50 shrink-0">
-              <button 
-                onClick={() => setSidebarTab('assistant')}
-                className={`flex-1 py-3 text-xs uppercase tracking-wider font-bold border-b-2 transition-colors ${sidebarTab === 'assistant' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
-              >
-                {t.aiAssistant}
-              </button>
-              <button 
-                onClick={() => setSidebarTab('notes')}
-                className={`flex-1 py-3 text-xs uppercase tracking-wider font-bold border-b-2 transition-colors ${sidebarTab === 'notes' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
-              >
-                Quick Notes
-              </button>
+          {!isFocusMode && (
+            <div className="w-80 sm:w-96 bg-white border-l border-slate-200 flex flex-col shrink-0 transition-all duration-300">
+              <div className="flex border-b border-slate-200 bg-slate-50 shrink-0">
+                <button 
+                  onClick={() => setSidebarTab('assistant')}
+                  className={`flex-1 py-3 text-xs uppercase tracking-wider font-bold border-b-2 transition-colors ${sidebarTab === 'assistant' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                >
+                  {t.aiAssistant}
+                </button>
+                <button 
+                  onClick={() => setSidebarTab('notes')}
+                  className={`flex-1 py-3 text-xs uppercase tracking-wider font-bold border-b-2 transition-colors ${sidebarTab === 'notes' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+                >
+                  Quick Notes
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                 {sidebarTab === 'assistant' ? <ChatAssistant /> : <QuickNotes />}
+              </div>
             </div>
-            
-            <div className="flex-1 overflow-y-auto">
-               {sidebarTab === 'assistant' ? <ChatAssistant /> : <QuickNotes />}
-            </div>
-          </div>
+          )}
         </div>
       </main>
       
