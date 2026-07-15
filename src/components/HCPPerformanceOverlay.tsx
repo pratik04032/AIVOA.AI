@@ -10,6 +10,7 @@ interface Interaction {
 
 export default function HCPPerformanceOverlay({ onClose }: { onClose: () => void }) {
   const [data, setData] = useState<Interaction[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const svgRef1 = useRef<SVGSVGElement>(null);
   const svgRef2 = useRef<SVGSVGElement>(null);
   const svgRef3 = useRef<SVGSVGElement>(null);
@@ -17,7 +18,10 @@ export default function HCPPerformanceOverlay({ onClose }: { onClose: () => void
   useEffect(() => {
     // Fetch all interactions
     fetch('/api/hcps/interactions/all')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error("Network error");
+        return res.json();
+      })
       .then((history: any[]) => {
         // Mock duration if missing, based on interactionType
         const processed = history.map(d => ({
@@ -26,7 +30,10 @@ export default function HCPPerformanceOverlay({ onClose }: { onClose: () => void
         }));
         setData(processed);
       })
-      .catch(err => console.error("Failed to fetch history", err));
+      .catch(err => {
+        console.error("Failed to fetch history", err);
+        setError("Failed to load performance data.");
+      });
   }, []);
 
   useEffect(() => {
@@ -197,22 +204,29 @@ export default function HCPPerformanceOverlay({ onClose }: { onClose: () => void
           </button>
         </div>
         
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center">
-            <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider text-center">Top HCPs by Interactions</h3>
-            <svg ref={svgRef1} width="400" height="250" className="w-full h-auto max-w-md"></svg>
+        {error ? (
+          <div className="p-12 text-center text-red-600 flex flex-col items-center gap-2">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            {error}
           </div>
-          
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center">
-            <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider text-center">Sentiment Trends</h3>
-            <svg ref={svgRef2} width="400" height="250" className="w-full h-auto max-w-md"></svg>
-          </div>
+        ) : (
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center">
+              <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider text-center">Top HCPs by Interactions</h3>
+              <svg ref={svgRef1} width="400" height="250" className="w-full h-auto max-w-md"></svg>
+            </div>
+            
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center">
+              <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider text-center">Sentiment Trends</h3>
+              <svg ref={svgRef2} width="400" height="250" className="w-full h-auto max-w-md"></svg>
+            </div>
 
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center">
-            <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider text-center">Avg Time Spent (mins)</h3>
-            <svg ref={svgRef3} width="400" height="250" className="w-full h-auto max-w-md"></svg>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center">
+              <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider text-center">Avg Time Spent (mins)</h3>
+              <svg ref={svgRef3} width="400" height="250" className="w-full h-auto max-w-md"></svg>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import RecentInteractions from './RecentInteractions.tsx';
 import { translations, Language } from '../translations.ts';
 import HCPTrendAnalysis from './HCPTrendAnalysis.tsx';
+import HCPInsights from './HCPInsights.tsx';
+import OCRScanner from './OCRScanner.tsx';
+import FollowUpScheduler from './FollowUpScheduler.tsx';
+import PDFPreview from './PDFPreview.tsx';
+import { vibrate } from '../utils/haptics.ts';
 
 const FormGroup = ({ title, icon, children }: any) => (
   <fieldset className="border border-slate-200 rounded-xl p-5 md:p-6 bg-white shadow-sm mb-8">
@@ -252,6 +257,26 @@ export default function InteractionForm() {
     }
   };
 
+  const handleOcrExtracted = (data: any) => {
+    const fieldsToUpdate: any = {};
+    const highlightedFields: string[] = [];
+    
+    if (data.hcpName) { fieldsToUpdate.hcpName = data.hcpName; highlightedFields.push('hcpName'); }
+    if (data.hcpSpecialty) { fieldsToUpdate.hcpSpecialty = data.hcpSpecialty; highlightedFields.push('hcpSpecialty'); }
+    if (data.hcpLocation) { fieldsToUpdate.hcpLocation = data.hcpLocation; highlightedFields.push('hcpLocation'); }
+    if (data.topicsDiscussed) { fieldsToUpdate.topicsDiscussed = data.topicsDiscussed; highlightedFields.push('topicsDiscussed'); }
+    if (data.interactionType) { fieldsToUpdate.interactionType = data.interactionType; highlightedFields.push('interactionType'); }
+    
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      dispatch(updateMultipleFields({ ...fieldsToUpdate, highlightedFields }));
+      setToastMessage({ title: 'OCR Success', message: 'Form populated from image.' });
+      setTimeout(() => setToastMessage(null), 4000);
+    } else {
+      setToastMessage({ title: 'OCR Note', message: 'No relevant data found in image.' });
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
   const handleSmartComplete = async () => {
     if (!formState.hcpName || !formState.interactionType) {
       setToastMessage({ title: 'Missing Info', message: 'Please provide HCP Name and Interaction Type for smart completion.' });
@@ -445,29 +470,32 @@ export default function InteractionForm() {
         </div>
       </section>
 
-      <section className="mb-8">
-        <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">{t.quickTemplates}</h3>
-        <div className="relative w-full max-w-md">
-          <select
-            onChange={(e) => {
-              applyTemplate(e.target.value);
-              e.target.value = ''; // Reset after selection
-            }}
-            className="w-full px-3 py-2 border border-indigo-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-indigo-800 bg-indigo-50 appearance-none font-medium cursor-pointer"
-            defaultValue=""
-          >
-            <option value="" disabled>{t.selectTemplate}</option>
-            <option value="Clinical Education">{t.clinicalEducation}</option>
-            <option value="Adverse Event Report">{t.adverseEventReport}</option>
-            <option value="Administrative">{t.administrative}</option>
-            <option value="Initial Meeting">{t.initialMeeting}</option>
-            <option value="Routine Follow-up">{t.routineFollowUp}</option>
-            <option value="Product Launch">{t.productLaunch}</option>
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-indigo-500">
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+      <section className="mb-8 flex justify-between items-end">
+        <div>
+          <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">{t.quickTemplates}</h3>
+          <div className="relative w-full max-w-md">
+            <select
+              onChange={(e) => {
+                applyTemplate(e.target.value);
+                e.target.value = ''; // Reset after selection
+              }}
+              className="w-full px-3 py-2 border border-indigo-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-indigo-800 bg-indigo-50 appearance-none font-medium cursor-pointer"
+              defaultValue=""
+            >
+              <option value="" disabled>{t.selectTemplate}</option>
+              <option value="Clinical Education">{t.clinicalEducation}</option>
+              <option value="Adverse Event Report">{t.adverseEventReport}</option>
+              <option value="Administrative">{t.administrative}</option>
+              <option value="Initial Meeting">{t.initialMeeting}</option>
+              <option value="Routine Follow-up">{t.routineFollowUp}</option>
+              <option value="Product Launch">{t.productLaunch}</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-indigo-500">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
           </div>
         </div>
+        <OCRScanner onExtracted={handleOcrExtracted} />
       </section>
 
       <FormGroup title={t.basicDetails} icon="📋">
@@ -556,6 +584,7 @@ export default function InteractionForm() {
                       ))}
                     </div>
                     <HCPTrendAnalysis history={history} />
+                    <HCPInsights hcpName={formState.hcpName} history={history} />
                   </>
                 )}
               </div>
@@ -718,6 +747,7 @@ export default function InteractionForm() {
               </button>
             ))}
           </div>
+          <PDFPreview />
         </div>
         
         <div>
@@ -838,6 +868,7 @@ export default function InteractionForm() {
                 This follow-up date is overdue!
               </p>
             )}
+            <FollowUpScheduler formState={formState} />
           </div>
         </div>
         </div>
@@ -934,6 +965,7 @@ export default function InteractionForm() {
         <button
           type="button"
           onClick={() => {
+            vibrate(50);
             dispatch(resetForm());
             localStorage.removeItem('hcpInteractionDraft');
           }}
@@ -946,6 +978,7 @@ export default function InteractionForm() {
           type="button"
           disabled={!formState.hcpName || !formState.date}
           onClick={async () => {
+            vibrate([100, 50, 100]); // success pattern
             if (!formState.hcpName || !formState.date) return;
             try {
               const res = await fetch('/api/hcps/interactions', {

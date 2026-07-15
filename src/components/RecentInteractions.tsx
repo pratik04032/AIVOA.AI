@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import InteractionChart from './InteractionChart.tsx';
+import InteractionHeatmap from './InteractionHeatmap.tsx';
 
 interface Interaction {
   id: string;
@@ -23,12 +24,30 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [hcps, setHcps] = useState<Record<string, string>>({}); // name -> specialty
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false);
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('hcpSearchHistory');
+    if (saved) {
+      try { setSearchHistory(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
+
+  const handleSearchSubmit = (query: string) => {
+    if (!query.trim()) return;
+    const newHistory = [query, ...searchHistory.filter(q => q !== query)].slice(0, 5);
+    setSearchHistory(newHistory);
+    localStorage.setItem('hcpSearchHistory', JSON.stringify(newHistory));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,8 +67,10 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
         
         setInteractions(interactionsData);
         setHcps(hcpMap);
+        setError(null);
       } catch (error) {
         console.error('Failed to fetch data', error);
+        setError('Failed to load interactions. You might be offline or the server is starting.');
       } finally {
         setLoading(false);
       }
@@ -107,11 +128,24 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
   };
 
   if (loading) {
-    return <div className="p-4 text-center text-slate-500 text-sm">Loading recent interactions...</div>;
+    return <div className="p-4 text-center text-slate-500 text-sm flex items-center justify-center gap-2"><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading recent interactions...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8 border-t border-slate-200 pt-8">
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 text-center flex flex-col items-center gap-2">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          {error}
+          <button onClick={() => window.location.reload()} className="mt-2 px-4 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md font-bold text-xs transition-colors">Retry</button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <section className="mt-8 border-t border-slate-200 pt-8">
+      <InteractionHeatmap history={interactions} />
       <InteractionChart interactions={interactions} />
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -193,9 +227,36 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
               placeholder="Search name, specialty, date..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearchSubmit(searchQuery);
+              }}
               className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 bg-white placeholder-slate-400 transition-colors shadow-sm"
             />
             <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            
+            {isSearchFocused && searchHistory.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 shadow-xl rounded-lg z-50 overflow-hidden">
+                <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 border-b border-slate-100">
+                  Recent Searches
+                </div>
+                {searchHistory.map((query, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-2"
+                    onClick={() => {
+                      setSearchQuery(query);
+                      handleSearchSubmit(query);
+                    }}
+                  >
+                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    {query}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           <select
