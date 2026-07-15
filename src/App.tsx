@@ -26,6 +26,15 @@ function AppContent() {
   const [sidebarTab, setSidebarTab] = useState<'assistant' | 'notes'>('assistant');
   const initialLoadDone = useRef(false);
 
+  const handleManualSync = () => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage('syncInteractions');
+      alert("Manual sync triggered.");
+    } else {
+      alert("Service worker not active or syncing not supported.");
+    }
+  };
+
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('hcpInteractionDraft');
@@ -87,6 +96,13 @@ function AppContent() {
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7l6-3 5.447 2.724A1 1 0 0121 7.618v10.764a1 1 0 01-1.447.894L15 17l-6 3z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7v13M15 4v13"></path></svg>
             Interaction Map
+          </button>
+          <button
+            onClick={handleManualSync}
+            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors rounded-lg text-sm font-semibold border border-emerald-200"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            {t.syncNow}
           </button>
           <button
             onClick={() => setShowPerformanceOverlay(true)}

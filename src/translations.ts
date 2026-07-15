@@ -52,6 +52,7 @@ export const translations = {
     draftSavedAt: "Draft saved at",
     autoSaving: "Auto-saving draft...",
     interactionForm: "Interaction Form",
+    syncNow: "Sync Now",
   },
   fr: {
     logInteraction: "Enregistrer l'interaction avec le PS",
@@ -104,6 +105,7 @@ export const translations = {
     draftSavedAt: "Brouillon enregistré à",
     autoSaving: "Enregistrement auto...",
     interactionForm: "Formulaire",
+    syncNow: "Synchroniser",
   },
   es: {
     logInteraction: "Registrar interacción",
@@ -156,6 +158,7 @@ export const translations = {
     draftSavedAt: "Borrador guardado a las",
     autoSaving: "Guardado automático...",
     interactionForm: "Formulario",
+    syncNow: "Sincronizar",
   },
   de: {
     logInteraction: "Interaktion protokollieren",
@@ -208,5 +211,6 @@ export const translations = {
     draftSavedAt: "Entwurf gespeichert um",
     autoSaving: "Automatisches Speichern...",
     interactionForm: "Formular",
+    syncNow: "Jetzt synchronisieren",
   }
 };

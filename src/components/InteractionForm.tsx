@@ -729,18 +729,28 @@ export default function InteractionForm() {
           onClick={async () => {
             if (!formState.hcpName || !formState.date) return;
             try {
-              await fetch('/api/hcps/interactions', {
+              const res = await fetch('/api/hcps/interactions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formState),
               });
+              const data = await res.json().catch(() => null);
+              
               dispatch(resetForm());
               localStorage.removeItem('hcpInteractionDraft');
               setRefreshTrigger(prev => prev + 1);
-              setToastMessage({ title: 'Success', message: 'Interaction successfully saved to the CRM.' });
-              setTimeout(() => setToastMessage(null), 3000);
+              
+              if (data && data.offline) {
+                setToastMessage({ title: 'Offline Mode', message: 'Interaction saved locally. It will sync automatically when you are back online.' });
+              } else {
+                setToastMessage({ title: 'Success', message: 'Interaction successfully saved to the CRM.' });
+              }
+              
+              setTimeout(() => setToastMessage(null), 4000);
             } catch (error) {
               console.error('Failed to save interaction', error);
+              setToastMessage({ title: 'Error', message: 'Failed to save interaction.' });
+              setTimeout(() => setToastMessage(null), 4000);
             }
           }}
           className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-lg ${!formState.hcpName || !formState.date ? 'bg-blue-400 text-white cursor-not-allowed shadow-blue-400/20' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'}`}
