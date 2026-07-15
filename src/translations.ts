@@ -53,6 +53,7 @@ export const translations = {
     autoSaving: "Auto-saving draft...",
     interactionForm: "Interaction Form",
     syncNow: "Sync Now",
+    regenerateSummary: "Regenerate Summary",
   },
   fr: {
     logInteraction: "Enregistrer l'interaction avec le PS",
@@ -106,6 +107,7 @@ export const translations = {
     autoSaving: "Enregistrement auto...",
     interactionForm: "Formulaire",
     syncNow: "Synchroniser",
+    regenerateSummary: "Régénérer le résumé",
   },
   es: {
     logInteraction: "Registrar interacción",
@@ -159,6 +161,7 @@ export const translations = {
     autoSaving: "Guardado automático...",
     interactionForm: "Formulario",
     syncNow: "Sincronizar",
+    regenerateSummary: "Regenerar resumen",
   },
   de: {
     logInteraction: "Interaktion protokollieren",
@@ -212,5 +215,6 @@ export const translations = {
     autoSaving: "Automatisches Speichern...",
     interactionForm: "Formular",
     syncNow: "Jetzt synchronisieren",
+    regenerateSummary: "Zusammenfassung neu generieren",
   }
 };
