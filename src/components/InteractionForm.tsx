@@ -3,6 +3,7 @@ import { RootState, updateField, resetForm, clearHighlights, InteractionState, u
 import { useState, useEffect, useRef } from 'react';
 import RecentInteractions from './RecentInteractions.tsx';
 import { translations, Language } from '../translations.ts';
+import HCPTrendAnalysis from './HCPTrendAnalysis.tsx';
 
 const FormGroup = ({ title, icon, children }: any) => (
   <fieldset className="border border-slate-200 rounded-xl p-5 md:p-6 bg-white shadow-sm mb-8">
@@ -147,18 +148,39 @@ export default function InteractionForm() {
 
   const calculateCompletion = () => {
     let score = 0;
-    if (formState.hcpName?.trim()) score += 20;
-    if (formState.date?.trim()) score += 20;
+    if (formState.hcpName?.trim()) score += 15;
+    if (formState.date?.trim()) score += 15;
     if (formState.interactionType?.trim()) score += 10;
     if (formState.time?.trim()) score += 10;
     if (formState.topicsDiscussed?.trim()) score += 20;
     if (formState.outcomes?.trim()) score += 10;
     if (formState.followUpActions?.trim()) score += 10;
+    if (formState.sentiment?.trim()) score += 10;
     return score;
   };
 
   const completionScore = calculateCompletion();
   
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + S to save draft, Cmd/Ctrl + Enter to submit
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submit-interaction-btn');
+        if (submitBtn && !submitBtn.hasAttribute('disabled')) {
+          submitBtn.click();
+        }
+      }
+      // Alt + S for Smart Complete
+      if (e.altKey && e.key === 's') {
+        e.preventDefault();
+        handleSmartComplete();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [formState]);
+
   useEffect(() => {
     if (formState.highlightedFields?.length > 0) {
       const timer = setTimeout(() => {
@@ -201,6 +223,34 @@ export default function InteractionForm() {
       setConflictWarning(false);
     }
   }, [formState.hcpName, formState.date]);
+
+  const handleAutoCategorize = async () => {
+    if (!formState.topicsDiscussed) {
+      setToastMessage({ title: 'Missing Info', message: 'Please provide some discussion topics to auto-categorize.' });
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: `Based on this interaction text: "${formState.topicsDiscussed}", what is the most likely interaction type? Choose ONLY from: "Meeting", "Call", "Email". Return just the word.` 
+        }),
+      });
+      const data = await response.json();
+      const type = data.response.trim();
+      if (['Meeting', 'Call', 'Email'].includes(type)) {
+        dispatch(updateMultipleFields({ interactionType: type, highlightedFields: ['interactionType'] }));
+        setToastMessage({ title: 'Categorized', message: `Auto-categorized as ${type}` });
+      } else {
+        setToastMessage({ title: 'Uncertain', message: 'Could not confidently categorize the interaction.' });
+      }
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (error) {
+      console.error("Auto categorize failed", error);
+    }
+  };
 
   const handleSmartComplete = async () => {
     if (!formState.hcpName || !formState.interactionType) {
@@ -345,7 +395,26 @@ export default function InteractionForm() {
   const labelClasses = "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
+    <div className="space-y-8 max-w-3xl mx-auto pb-24">
+      {/* Progress Indicator */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm p-4 -mx-4 mb-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex flex-col flex-1 mr-4">
+          <div className="flex justify-between items-center mb-1">
+            <span className="text-xs font-bold text-slate-600 uppercase">Form Completion</span>
+            <span className="text-xs font-bold text-slate-800">{completionScore}%</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-1.5">
+            <div 
+              className={`h-1.5 rounded-full transition-all duration-500 ${completionScore >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+              style={{ width: `${Math.min(completionScore, 100)}%` }}
+            ></div>
+          </div>
+        </div>
+        <div className="text-[10px] text-slate-400 font-mono">
+          Shortcuts: Cmd+Enter (Submit) | Alt+S (Smart Complete)
+        </div>
+      </div>
+
       <section className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-5 shadow-sm">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-xs font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2">
@@ -474,24 +543,36 @@ export default function InteractionForm() {
                   <p className="text-xs text-blue-600/70 italic">No previous interactions found.</p>
                 )}
                 {!loadingHistory && history.length > 0 && (
-                  <div className="space-y-2 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
-                    {history.slice(0, 3).map((item, idx) => (
-                      <div key={idx} className="text-xs bg-white rounded p-2 border border-blue-100/50 flex justify-between items-start gap-2">
-                        <div>
-                          <span className="font-semibold text-slate-700">{item.interactionType}</span>
-                          <span className="text-slate-500 block truncate max-w-[150px]" title={item.topicsDiscussed}>{item.topicsDiscussed || 'No topics listed'}</span>
+                  <>
+                    <div className="space-y-2 max-h-[100px] overflow-y-auto pr-1 custom-scrollbar">
+                      {history.slice(0, 3).map((item, idx) => (
+                        <div key={idx} className="text-xs bg-white rounded p-2 border border-blue-100/50 flex justify-between items-start gap-2">
+                          <div>
+                            <span className="font-semibold text-slate-700">{item.interactionType}</span>
+                            <span className="text-slate-500 block truncate max-w-[150px]" title={item.topicsDiscussed}>{item.topicsDiscussed || 'No topics listed'}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">{new Date(item.date || item.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
                         </div>
-                        <span className="text-[10px] text-slate-400 shrink-0 whitespace-nowrap">{new Date(item.date || item.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    <HCPTrendAnalysis history={history} />
+                  </>
                 )}
               </div>
             )}
             
           </div>
           <div>
-            <label className={labelClasses}>{t.interactionType}</label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-0">{t.interactionType}</label>
+              <button 
+                type="button" 
+                onClick={handleAutoCategorize}
+                className="text-[10px] text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider"
+              >
+                Auto Categorize
+              </button>
+            </div>
             <select
               value={formState.interactionType}
               onChange={(e) => handleChange('interactionType', e.target.value)}
@@ -861,6 +942,7 @@ export default function InteractionForm() {
           {t.clearForm}
         </button>
         <button
+          id="submit-interaction-btn"
           type="button"
           disabled={!formState.hcpName || !formState.date}
           onClick={async () => {
