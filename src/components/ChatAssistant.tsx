@@ -7,11 +7,62 @@ export default function ChatAssistant() {
   const { messages, isTyping } = useSelector((state: RootState) => state.chat);
   const formState = useSelector((state: RootState) => state.interaction);
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Initialize Speech Recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      
+      recognitionRef.current.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+          setInput(prev => prev + (prev ? ' ' : '') + finalTranscript);
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      if (!recognitionRef.current) {
+        alert("Speech recognition is not supported in this browser.");
+        return;
+      }
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -91,10 +142,17 @@ export default function ChatAssistant() {
           />
           <button 
             type="button" 
-            className="absolute right-2 bottom-3 text-slate-400 hover:text-blue-500 transition-colors"
-            title="Voice Input"
+            onClick={toggleListening}
+            className={`absolute right-2 bottom-3 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-blue-500'}`}
+            title={isListening ? "Stop listening" : "Voice Input"}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isListening ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+              )}
+            </svg>
           </button>
         </div>
         <div className="flex justify-between items-center">
