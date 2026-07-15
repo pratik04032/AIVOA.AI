@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, updateField, resetForm, clearHighlights, InteractionState, updateMultipleFields } from '../store.ts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import RecentInteractions from './RecentInteractions.tsx';
 
 const FormGroup = ({ title, icon, children }: any) => (
@@ -31,6 +31,66 @@ export default function InteractionForm() {
   const [hcpSearchResults, setHcpSearchResults] = useState<any[]>([]);
   const [isSearchingHcp, setIsSearchingHcp] = useState(false);
   const [showHcpDropdown, setShowHcpDropdown] = useState(false);
+
+  const [recordingField, setRecordingField] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleRecording = (field: string) => {
+    if (recordingField === field) {
+      if (recognitionRef.current) recognitionRef.current.stop();
+      setRecordingField(null);
+      return;
+    }
+
+    if (recordingField && recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setRecordingField(field);
+    
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        setFormStateCurrentValue(field, finalTranscript.trim());
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      setRecordingField(null);
+    };
+    
+    recognition.onend = () => setRecordingField(null);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const formStateRef = useRef(formState);
+  useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  const setFormStateCurrentValue = (field: string, transcript: string) => {
+    const currentValue = formStateRef.current[field as keyof InteractionState] as string;
+    const space = currentValue && !currentValue.endsWith(' ') ? ' ' : '';
+    dispatch(updateField({ field: field as keyof InteractionState, value: currentValue ? currentValue + space + transcript : transcript }));
+  };
 
   useEffect(() => {
     if (!hcpSearchQuery.trim()) {
@@ -153,6 +213,15 @@ export default function InteractionForm() {
     let templateData: Partial<InteractionState> = {};
     
     switch (templateName) {
+      case 'Clinical Education':
+        templateData = { interactionType: 'Meeting', topicsDiscussed: 'Educated HCP on latest clinical guidelines and trial results.', sentiment: 'Positive' };
+        break;
+      case 'Adverse Event Report':
+        templateData = { interactionType: 'Call', topicsDiscussed: 'Received report of adverse event. Collected details for pharmacovigilance.', followUpActions: 'Submit formal AE report to compliance within 24h.', sentiment: 'Negative' };
+        break;
+      case 'Administrative':
+        templateData = { interactionType: 'Email', topicsDiscussed: 'Account management, contracting, or scheduling.', sentiment: 'Neutral' };
+        break;
       case 'Initial Meeting':
         templateData = { interactionType: 'Meeting', topicsDiscussed: 'Introduction and general product overview.', sentiment: 'Neutral' };
         break;
@@ -162,14 +231,13 @@ export default function InteractionForm() {
       case 'Product Launch':
         templateData = { interactionType: 'Meeting', topicsDiscussed: 'Introduced new product features and reviewed latest clinical data.', materialsShared: 'Product Brochure', sentiment: 'Neutral' };
         break;
-      case 'Adverse Event':
-        templateData = { interactionType: 'Call', topicsDiscussed: 'Reported safety concern and discussed adverse event protocols.', followUpActions: 'Report to pharmacovigilance team.', sentiment: 'Negative' };
-        break;
     }
-    if (!formState.date) {
-      templateData.date = new Date().toISOString().split('T')[0];
+    if (Object.keys(templateData).length > 0) {
+      if (!formState.date) {
+        templateData.date = new Date().toISOString().split('T')[0];
+      }
+      dispatch(updateMultipleFields(templateData));
     }
-    dispatch(updateMultipleFields(templateData));
   };
 
   const labelClasses = "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
@@ -207,17 +275,27 @@ export default function InteractionForm() {
       </section>
 
       <section className="mb-8">
-        <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Meeting Templates</h3>
-        <div className="flex flex-wrap gap-2">
-          {['Initial Meeting', 'Routine Follow-up', 'Product Launch', 'Adverse Event'].map(t => (
-            <button
-              key={t}
-              onClick={() => applyTemplate(t)}
-              className="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors shadow-sm"
-            >
-              {t}
-            </button>
-          ))}
+        <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Quick Templates</h3>
+        <div className="relative w-full max-w-md">
+          <select
+            onChange={(e) => {
+              applyTemplate(e.target.value);
+              e.target.value = ''; // Reset after selection
+            }}
+            className="w-full px-3 py-2 border border-indigo-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-indigo-800 bg-indigo-50 appearance-none font-medium cursor-pointer"
+            defaultValue=""
+          >
+            <option value="" disabled>Select a template to auto-fill...</option>
+            <option value="Clinical Education">Clinical Education</option>
+            <option value="Adverse Event Report">Adverse Event Report</option>
+            <option value="Administrative">Administrative</option>
+            <option value="Initial Meeting">Initial Meeting</option>
+            <option value="Routine Follow-up">Routine Follow-up</option>
+            <option value="Product Launch">Product Launch</option>
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-indigo-500">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
         </div>
       </section>
 
@@ -462,7 +540,17 @@ export default function InteractionForm() {
         <div className="space-y-6">
           <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Outcomes</label>
+            <div className="flex items-center gap-2">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Outcomes</label>
+              <button
+                type="button"
+                onClick={() => toggleRecording('outcomes')}
+                className={`p-1 rounded-full transition-colors ${recordingField === 'outcomes' ? 'bg-red-100 text-red-600 animate-pulse' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                title={recordingField === 'outcomes' ? "Stop recording" : "Start voice input"}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+              </button>
+            </div>
             <span className="text-[10px] text-slate-400 font-mono">{formState.outcomes.length} chars</span>
           </div>
           <textarea
@@ -478,7 +566,17 @@ export default function InteractionForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Follow-up Actions</label>
+              <div className="flex items-center gap-2">
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Follow-up Actions</label>
+                <button
+                  type="button"
+                  onClick={() => toggleRecording('followUpActions')}
+                  className={`p-1 rounded-full transition-colors ${recordingField === 'followUpActions' ? 'bg-red-100 text-red-600 animate-pulse' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                  title={recordingField === 'followUpActions' ? "Stop recording" : "Start voice input"}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </button>
+              </div>
               <span className="text-[10px] text-slate-400 font-mono">{formState.followUpActions.length} chars</span>
             </div>
             <textarea
@@ -531,7 +629,17 @@ export default function InteractionForm() {
 
       <section className="pt-6 mt-6 border-t border-slate-200">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Executive Summary</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Executive Summary</h3>
+            <button
+              type="button"
+              onClick={() => toggleRecording('executiveSummary')}
+              className={`p-1.5 rounded-full transition-colors ${recordingField === 'executiveSummary' ? 'bg-red-100 text-red-600 animate-pulse' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+              title={recordingField === 'executiveSummary' ? "Stop recording" : "Start voice input"}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            </button>
+          </div>
           <button
             type="button"
             onClick={handleSummarize}
@@ -548,15 +656,14 @@ export default function InteractionForm() {
             )}
           </button>
         </div>
-        {formState.executiveSummary ? (
-          <div className="p-4 bg-white border border-slate-200 rounded-lg shadow-sm text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-            {formState.executiveSummary}
-          </div>
-        ) : (
-          <div className="p-6 bg-slate-50 border border-slate-200 border-dashed rounded-lg text-sm text-slate-400 italic text-center">
-            Click Auto-Summarize to generate a brief, AI-powered overview of this interaction.
-          </div>
-        )}
+        
+        <textarea
+          placeholder="Enter a brief, overall summary of this interaction... Use voice-to-text or Auto-Summarize."
+          rows={4}
+          value={formState.executiveSummary}
+          onChange={(e) => handleChange('executiveSummary', e.target.value)}
+          className={getInputClasses('executiveSummary')}
+        />
       </section>
 
       <section className="pt-6 mt-6 flex justify-end gap-3">
