@@ -9,7 +9,7 @@ chatRouter.post("/summarize", async (req, res) => {
   try {
     const { formState } = req.body;
     const llm = new ChatGroq({
-      model: "gemma2-9b-it",
+      model: "llama-3.1-8b-instant",
       apiKey: process.env.GROQ_API_KEY,
       temperature: 0.2,
     });
@@ -33,7 +33,7 @@ chatRouter.post("/summarize-sentence", async (req, res) => {
   try {
     const { formState } = req.body;
     const llm = new ChatGroq({
-      model: "gemma2-9b-it",
+      model: "llama-3.1-8b-instant",
       apiKey: process.env.GROQ_API_KEY,
       temperature: 0.2,
     });

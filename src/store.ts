@@ -2,6 +2,8 @@ import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 export interface InteractionState {
   hcpName: string;
+  hcpSpecialty: string;
+  hcpLocation: string;
   interactionType: string;
   date: string;
   time: string;
@@ -19,6 +21,8 @@ export interface InteractionState {
 
 const initialInteractionState: InteractionState = {
   hcpName: '',
+  hcpSpecialty: '',
+  hcpLocation: '',
   interactionType: '',
   date: '',
   time: '',

@@ -8,6 +8,9 @@ interface Interaction {
   summary: string;
   createdAt: string;
   date: string;
+  followUpDate?: string;
+  outcomes?: string;
+  followUpActions?: string;
 }
 
 interface HCP {
@@ -72,17 +75,19 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
   }, [interactions, hcps, searchQuery, filterType]);
 
   const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "HCP Name,Specialty,Interaction Type,Date,Summary\n"
-      + filteredInteractions.map(i => `"${i.hcpName}","${hcps[i.hcpName] || ''}","${i.interactionType}","${i.date || new Date(i.createdAt).toLocaleDateString()}","${(i.summary || '').replace(/"/g, '""')}"`).join("\n");
+    const csvHeader = "HCP Name,Specialty,Interaction Type,Date,Summary,Outcomes,Follow-up Actions,Follow-up Date\n";
+    const csvData = filteredInteractions.map(i => `"${i.hcpName}","${hcps[i.hcpName] || ''}","${i.interactionType}","${i.date || new Date(i.createdAt).toLocaleDateString()}","${(i.summary || '').replace(/"/g, '""')}","${(i.outcomes || '').replace(/"/g, '""')}","${(i.followUpActions || '').replace(/"/g, '""')}","${i.followUpDate || ''}"`).join("\n");
+    const csvContent = csvHeader + csvData;
     
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "interactions.csv");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "interactions_report.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {

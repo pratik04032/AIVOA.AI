@@ -4,6 +4,22 @@ import { collection, getDocs, query, orderBy, limit, where, addDoc } from "fireb
 
 export const hcpRouter = Router();
 
+hcpRouter.get("/search", async (req, res) => {
+  const queryParam = (req.query.q as string || "").toLowerCase();
+  
+  // Mock HCP database
+  const mockHcps = [
+    { name: "Dr. Sarah Jenkins", specialty: "Cardiology", location: "New York Medical Center" },
+    { name: "Dr. Michael Chen", specialty: "Neurology", location: "Seattle General Hospital" },
+    { name: "Dr. Emily Roberts", specialty: "Pediatrics", location: "Boston Children's" },
+    { name: "Dr. James Wilson", specialty: "Oncology", location: "Texas Medical Center" },
+    { name: "Dr. Lisa Patel", specialty: "General Practice", location: "Chicago Family Clinic" }
+  ];
+
+  const results = mockHcps.filter(hcp => hcp.name.toLowerCase().includes(queryParam) || hcp.specialty.toLowerCase().includes(queryParam));
+  res.json(results);
+});
+
 hcpRouter.get("/", async (req, res) => {
   try {
     const snapshot = await getDocs(collection(db, 'hcps'));

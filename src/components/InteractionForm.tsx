@@ -27,6 +27,40 @@ export default function InteractionForm() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [toastMessage, setToastMessage] = useState<{title: string, message: string} | null>(null);
 
+  const [hcpSearchQuery, setHcpSearchQuery] = useState('');
+  const [hcpSearchResults, setHcpSearchResults] = useState<any[]>([]);
+  const [isSearchingHcp, setIsSearchingHcp] = useState(false);
+  const [showHcpDropdown, setShowHcpDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!hcpSearchQuery.trim()) {
+      setHcpSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setIsSearchingHcp(true);
+      fetch(`/api/hcps/search?q=${encodeURIComponent(hcpSearchQuery)}`)
+        .then(res => res.json())
+        .then(data => {
+          setHcpSearchResults(data);
+          setShowHcpDropdown(true);
+        })
+        .catch(err => console.error("Failed to search HCPs", err))
+        .finally(() => setIsSearchingHcp(false));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [hcpSearchQuery]);
+
+  const handleSelectHcp = (hcp: any) => {
+    dispatch(updateMultipleFields({
+      hcpName: hcp.name,
+      hcpSpecialty: hcp.specialty,
+      hcpLocation: hcp.location
+    }));
+    setHcpSearchQuery(hcp.name);
+    setShowHcpDropdown(false);
+  };
+
   useEffect(() => {
     if (formState.hcpName?.trim()) {
       setLoadingHistory(true);
@@ -194,21 +228,49 @@ export default function InteractionForm() {
             <div className="relative w-full">
               <input
                 type="text"
-                list="hcp-search-options"
                 placeholder="Search or select HCP..."
-                value={formState.hcpName}
-                onChange={(e) => handleChange('hcpName', e.target.value)}
+                value={hcpSearchQuery || formState.hcpName}
+                onChange={(e) => {
+                  setHcpSearchQuery(e.target.value);
+                  handleChange('hcpName', e.target.value);
+                  setShowHcpDropdown(true);
+                }}
                 className={`${getInputClasses('hcpName')} pl-9`}
+                onFocus={() => setShowHcpDropdown(true)}
+                onBlur={() => setTimeout(() => setShowHcpDropdown(false), 200)}
               />
-              <datalist id="hcp-search-options">
-                <option value="Dr. Sarah Jenkins" />
-                <option value="Dr. Michael Chen" />
-                <option value="Dr. Emily Roberts" />
-                <option value="Dr. James Wilson" />
-                <option value="Dr. Lisa Patel" />
-              </datalist>
               <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              {showHcpDropdown && hcpSearchQuery.trim() && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {isSearchingHcp ? (
+                    <div className="p-3 text-xs text-slate-500 text-center">Searching...</div>
+                  ) : hcpSearchResults.length > 0 ? (
+                    hcpSearchResults.map((hcp, idx) => (
+                      <div 
+                        key={idx} 
+                        className="p-3 border-b border-slate-100 hover:bg-blue-50 cursor-pointer"
+                        onClick={() => handleSelectHcp(hcp)}
+                      >
+                        <div className="font-bold text-sm text-slate-800">{hcp.name}</div>
+                        <div className="text-xs text-slate-500">{hcp.specialty} • {hcp.location}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 text-xs text-slate-500 text-center">No results found</div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {(formState.hcpSpecialty || formState.hcpLocation) && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <div className="flex flex-col">
+                  {formState.hcpSpecialty && <span className="font-medium text-slate-700">{formState.hcpSpecialty}</span>}
+                  {formState.hcpLocation && <span className="text-slate-500">{formState.hcpLocation}</span>}
+                </div>
+              </div>
+            )}
             
             {formState.hcpName?.trim() && (
               <div className="mt-3 bg-blue-50/50 rounded-lg border border-blue-100 p-3">
