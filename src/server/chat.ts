@@ -29,6 +29,30 @@ ${JSON.stringify(formState, null, 2)}`;
   }
 });
 
+chatRouter.post("/summarize-sentence", async (req, res) => {
+  try {
+    const { formState } = req.body;
+    const llm = new ChatGroq({
+      model: "gemma2-9b-it",
+      apiKey: process.env.GROQ_API_KEY,
+      temperature: 0.2,
+    });
+
+    const prompt = `You are an AI assistant helping a life science field representative.
+Generate a concise, single-sentence summary of the current interaction based on the following data.
+Do not use bullet points or extra text. Just a single, complete sentence.
+
+Interaction Data:
+${JSON.stringify(formState, null, 2)}`;
+
+    const response = await llm.invoke([new HumanMessage({ content: prompt })]);
+    res.json({ summary: response.content });
+  } catch (error: any) {
+    console.error("Summarize sentence error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 chatRouter.post("/", async (req, res) => {
   try {
     const { messages, formState } = req.body;
