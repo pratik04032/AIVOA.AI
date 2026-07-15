@@ -83,6 +83,23 @@ Notes:
   }
 });
 
+chatRouter.post("/smart-complete", async (req, res) => {
+  try {
+    const { message } = req.body;
+    const llm = new ChatGroq({
+      model: "llama-3.1-8b-instant",
+      apiKey: process.env.GROQ_API_KEY,
+      temperature: 0.1,
+    });
+    
+    const response = await llm.invoke([new HumanMessage({ content: message })]);
+    res.json({ response: response.content });
+  } catch (error: any) {
+    console.error("Smart complete error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 chatRouter.post("/", async (req, res) => {
   try {
     const { messages, formState } = req.body;

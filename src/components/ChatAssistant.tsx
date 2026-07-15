@@ -7,6 +7,7 @@ export default function ChatAssistant() {
   const { messages, isTyping } = useSelector((state: RootState) => state.chat);
   const formState = useSelector((state: RootState) => state.interaction);
   const [input, setInput] = useState('');
+  const [interimResult, setInterimResult] = useState('');
   const [isListening, setIsListening] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -16,7 +17,7 @@ export default function ChatAssistant() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
+      recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
       
       recognitionRef.current.onresult = (event: any) => {
@@ -31,6 +32,8 @@ export default function ChatAssistant() {
           }
         }
         
+        setInterimResult(interimTranscript);
+
         if (finalTranscript) {
           setInput(prev => prev + (prev ? ' ' : '') + finalTranscript);
         }
@@ -38,11 +41,15 @@ export default function ChatAssistant() {
 
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
-        setIsListening(false);
+        if (event.error !== 'no-speech') {
+          setIsListening(false);
+          setInterimResult('');
+        }
       };
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
+        setInterimResult('');
       };
     }
   }, []);
@@ -155,6 +162,11 @@ export default function ChatAssistant() {
             </svg>
           </button>
         </div>
+        {interimResult && (
+          <div className="text-xs text-slate-500 italic px-1 animate-pulse">
+            Listening: {interimResult}
+          </div>
+        )}
         <div className="flex justify-between items-center">
           <span className="text-[10px] text-slate-400 font-medium">Press Enter to send</span>
           <button

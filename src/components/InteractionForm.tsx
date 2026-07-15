@@ -236,7 +236,7 @@ export default function InteractionForm() {
       return;
     }
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/smart-complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -285,7 +285,7 @@ export default function InteractionForm() {
     }
     setIsSmartCompleting(true);
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/smart-complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -293,7 +293,11 @@ export default function InteractionForm() {
         }),
       });
       const data = await response.json();
-      const jsonStr = data.response.replace(/```json/g, '').replace(/```/g, '').trim();
+      let jsonStr = data.response;
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      }
       const parsed = JSON.parse(jsonStr);
       dispatch(updateMultipleFields({
         topicsDiscussed: formState.topicsDiscussed || parsed.topicsDiscussed,
