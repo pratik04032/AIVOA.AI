@@ -1,14 +1,13 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 import { StateGraph, MessagesAnnotation } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { tools } from "./tools.js";
 
 // Ensure we have an API key. We will pass this at initialization or rely on environment variables.
-const model = new ChatGoogleGenerativeAI({
-  model: "gemini-3.1-pro-preview",
-  apiKey: process.env.GEMINI_API_KEY,
+const model = new ChatGroq({
+  model: "llama-3.3-70b-versatile",
+  apiKey: process.env.GROQ_API_KEY,
   temperature: 0,
-  thinkingConfig: { thinkingLevel: "HIGH" }
 }).bindTools(tools);
 
 const toolNode = new ToolNode(tools);

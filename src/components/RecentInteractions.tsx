@@ -24,6 +24,7 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
+  const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,13 +101,49 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Recently Logged Interactions</h3>
         
         <div className="flex gap-3 w-full sm:w-auto items-center">
-          <button 
-            type="button"
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            History
-          </button>
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => setIsHistoryDropdownOpen(!isHistoryDropdownOpen)}
+              className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              History
+            </button>
+            
+            {isHistoryDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 shadow-xl rounded-lg z-50 overflow-hidden">
+                <div className="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">All Interaction History</h4>
+                  <button onClick={() => setIsHistoryDropdownOpen(false)} className="text-slate-400 hover:text-slate-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {interactions.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {interactions.map(interaction => (
+                        <div key={interaction.id} className="p-3 hover:bg-slate-50 transition-colors text-left">
+                          <div className="flex justify-between items-start mb-1">
+                            <div>
+                              <span className="text-xs font-bold text-slate-700">{interaction.hcpName}</span>
+                              <span className="text-[10px] text-slate-500 ml-2 uppercase">{interaction.interactionType}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 shrink-0">{interaction.date || new Date(interaction.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 line-clamp-2">{interaction.summary || 'No summary available.'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-xs text-slate-500">
+                      No interactions found.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <button 
             onClick={handleExport}
             className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"

@@ -391,6 +391,10 @@ export default function InteractionForm() {
               <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
               <span className="font-medium">Send OncoBoost Phase III PDF</span>
             </li>
+            <li className="flex items-center gap-2 cursor-pointer hover:bg-blue-100/50 p-1.5 -mx-1.5 rounded transition-colors">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+              <span className="font-medium">Add Dr. Sharma to advisory board invite list</span>
+            </li>
           </ul>
         </section>
       )}

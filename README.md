@@ -1,28 +1,56 @@
-# AI-First CRM HCP Module – Log Interaction Screen
+# AI-First CRM HCP Module - Log Interaction Screen
 
-This is a technical implementation of the "Log Interaction Screen" for an AI-first Customer Relationship Management (CRM) system designed for life science field representatives.
+This repository contains the frontend and backend implementation for an AI-First Customer Relationship Management (CRM) system, specifically focusing on the Healthcare Professional (HCP) module. 
 
-## Features
+## Project Structure
 
-- **Split Screen Interface**: Left side contains the structured interaction form, right side contains the AI Chat Assistant.
-- **Form State Management**: Powered by React & Redux Toolkit for seamless reactive updates.
-- **AI Agent Framework**: Integrated with LangGraph.js and Gemini 2.5 Pro (as per environment capabilities, substituting Groq/Gemma) to contextually understand sales activities.
-- **Conversational Logging**: You can type "Met Dr. Smith today for a meeting. We discussed Product X, sentiment was positive and follow up is to schedule a meeting in 2 weeks" in the AI assistant, and it will parse this entity information to automatically fill the form using its specialized tools.
-- **Database**: SQLite (via Drizzle ORM) serves as the persistent relational database, mirroring the requirements of a SQL database.
+*Note: As this project is hosted and built within the AI Studio sandbox environment (which natively supports Node.js/Vite), the backend is implemented in Node.js/Express and the database uses Firebase Firestore. This serves as a functional equivalent to the requested Python/FastAPI and MySQL/PostgreSQL stack.*
 
-## Architecture
+The project is built with a modern React frontend using Vite and Tailwind CSS, backed by an Express/Node.js server-side environment for API mocking and AI capabilities. State management is handled using Redux.
 
-- **Frontend**: React + Vite + Tailwind CSS. State is stored in Redux slices (`store.ts`).
-- **Backend**: Express + TypeScript. Due to container constraints, the required FastAPI Python backend was written as an equivalent TypeScript backend that mimics the exact endpoints.
-- **AI Integration**: Uses `@langchain/langgraph` to create a `StateGraph` which manages the multi-turn conversational agent with 5 specific tools:
-  - `log_interaction`: Extracts fields from the chat.
-  - `edit_interaction`: Modifies specific fields directly.
-  - `search_hcps`: Finds HCP records.
-  - `get_interaction_history`: Retrieves historical logs.
-  - `suggest_follow_ups`: Generates intelligent next steps.
+- `src/App.tsx`: Main application layout, split into the structured interaction form (left) and the conversational chat interface (right).
+- `src/components/InteractionForm.tsx`: The primary structured form for logging interactions, matching the required fields and layout.
+- `src/components/ChatAssistant.tsx`: The conversational interface that allows reps to log interactions via natural language, which then populates the structured form.
+- `src/store.ts`: Redux store configuration for managing the interaction form state.
+- `server.ts`: Backend server simulating the FastAPI/Python layer (in a Node environment) for AI summarization and CRM data endpoints.
 
-## Running Locally (Outside AI Studio)
+## How to Run
 
-1. `npm install`
-2. `npm run dev`
-3. Make sure to provide `GEMINI_API_KEY` in your `.env` file.
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Build for production:
+   ```bash
+   npm run build
+   ```
+
+## LangGraph AI Agent & Tools
+
+### Role of the LangGraph Agent in Managing HCP Interactions
+The LangGraph agent acts as an intelligent orchestration layer between the field representative and the CRM database. Instead of forcing the rep to manually fill out complex forms, the agent can process natural language (either via text chat or voice notes), maintain context of the conversation, extract relevant entities (HCP names, products, sentiments, outcomes), and automatically map them to the structured CRM database. It ensures data consistency, reduces administrative burden, and proactively suggests follow-up actions based on the context of the interaction.
+
+### Five (5) Specific Tools for the LangGraph Agent
+
+1. **Log Interaction** (Required)
+   - *Description*: Captures interaction data from unstructured input. The LLM summarizes the conversation, extracts key entities (HCP name, date, sentiment, materials shared), and formats it into a structured JSON payload that is sent to the CRM database.
+
+2. **Edit Interaction** (Required)
+   - *Description*: Allows the rep to modify previously logged data via conversational commands (e.g., "Actually, I also gave Dr. Smith a trial kit"). The tool retrieves the existing record, applies the delta changes intelligently using the LLM, and updates the database.
+
+3. **Search HCPs**
+   - *Description*: Searches the CRM database for Healthcare Professionals by name to verify if an HCP exists before logging interactions.
+
+4. **Get Interaction History**
+   - *Description*: Queries the database for past interactions of a specific HCP to provide the rep with historical context.
+
+5. **Suggest Follow-ups**
+   - *Description*: Generates contextual follow-up actions based on the interaction details discussed.
+
+## Task Summary
+The objective of this task was to conceptualize and build the "Log Interaction Screen" for an AI-first CRM tailored for life science field representatives. The solution provides a dual-interface approach: a traditional structured form for precise data entry and an AI-powered conversational chat for fast, unstructured logging. The architecture emphasizes the use of an LLM and an agentic framework (LangGraph) to bridge the gap between human conversation and structured database records, ultimately streamlining the workflow for medical representatives.

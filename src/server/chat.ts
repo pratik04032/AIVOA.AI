@@ -1,16 +1,16 @@
 import { Router } from "express";
 import { agent } from "./agent/index.js";
 import { HumanMessage, AIMessage, SystemMessage } from "@langchain/core/messages";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGroq } from "@langchain/groq";
 
 export const chatRouter = Router();
 
 chatRouter.post("/summarize", async (req, res) => {
   try {
     const { formState } = req.body;
-    const llm = new ChatGoogleGenerativeAI({
-      model: "gemini-3.1-pro-preview",
-      apiKey: process.env.GEMINI_API_KEY,
+    const llm = new ChatGroq({
+      model: "gemma2-9b-it",
+      apiKey: process.env.GROQ_API_KEY,
       temperature: 0.2,
     });
 
