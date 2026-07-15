@@ -80,8 +80,6 @@ export default function InteractionChart({ interactions }: InteractionChartProps
     };
   }, [interactions]);
 
-  if (interactions.length === 0) return null;
-
   return (
     <div className="mb-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">

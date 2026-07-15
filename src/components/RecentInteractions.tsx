@@ -89,10 +89,6 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
     return <div className="p-4 text-center text-slate-500 text-sm">Loading recent interactions...</div>;
   }
 
-  if (interactions.length === 0 && !searchQuery && !filterType) {
-    return null;
-  }
-
   return (
     <section className="mt-8 border-t border-slate-200 pt-8">
       <InteractionChart interactions={interactions} />
