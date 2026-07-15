@@ -28,6 +28,7 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [isHistoryDropdownOpen, setIsHistoryDropdownOpen] = useState(false);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,6 +89,21 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    setIsExportDropdownOpen(false);
+  };
+
+  const handleExportJSON = () => {
+    const jsonContent = JSON.stringify(filteredInteractions, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "interactions_report.json");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setIsExportDropdownOpen(false);
   };
 
   if (loading) {
@@ -145,13 +161,31 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
               </div>
             )}
           </div>
-          <button 
-            onClick={handleExport}
-            className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export CSV
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+              className="px-3 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Export Options
+            </button>
+            {isExportDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 shadow-xl rounded-lg z-50 overflow-hidden flex flex-col">
+                <button 
+                  onClick={handleExport}
+                  className="px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Export CSV
+                </button>
+                <button 
+                  onClick={handleExportJSON}
+                  className="px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Export JSON
+                </button>
+              </div>
+            )}
+          </div>
           
           <div className="relative flex-1 sm:w-64">
             <input

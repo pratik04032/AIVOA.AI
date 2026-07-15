@@ -15,6 +15,7 @@ export interface InteractionState {
   outcomes: string;
   followUpActions: string;
   followUpDate: string;
+  duration: string;
   executiveSummary: string;
   highlightedFields: string[];
 }
@@ -34,6 +35,7 @@ const initialInteractionState: InteractionState = {
   outcomes: '',
   followUpActions: '',
   followUpDate: '',
+  duration: '',
   executiveSummary: '',
   highlightedFields: [],
 };

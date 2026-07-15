@@ -37,6 +37,13 @@ export default function InteractionForm() {
   const [showHcpDropdown, setShowHcpDropdown] = useState(false);
 
   const [recordingField, setRecordingField] = useState<string | null>(null);
+  
+  // New States
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [conflictWarning, setConflictWarning] = useState(false);
+  const [isSmartCompleting, setIsSmartCompleting] = useState(false);
+
   const recognitionRef = useRef<any>(null);
 
   const toggleRecording = (field: string) => {
@@ -160,6 +167,74 @@ export default function InteractionForm() {
       return () => clearTimeout(timer);
     }
   }, [formState.highlightedFields, dispatch]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(s => s + 1);
+      }, 1000);
+    } else if (!isTimerRunning && timerSeconds !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timerSeconds]);
+
+  useEffect(() => {
+    if (!isTimerRunning && timerSeconds > 0) {
+      const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+      const s = (timerSeconds % 60).toString().padStart(2, '0');
+      dispatch(updateField({ field: 'duration', value: `${m}:${s}` }));
+    }
+  }, [isTimerRunning, timerSeconds, dispatch]);
+
+  useEffect(() => {
+    if (formState.hcpName && formState.date) {
+      fetch(`/api/hcps/interactions/all`)
+        .then(res => res.json())
+        .then((data: any[]) => {
+          const conflict = data.some(i => i.hcpName === formState.hcpName && (i.date === formState.date || i.createdAt?.startsWith(formState.date)));
+          setConflictWarning(conflict);
+        })
+        .catch(() => setConflictWarning(false));
+    } else {
+      setConflictWarning(false);
+    }
+  }, [formState.hcpName, formState.date]);
+
+  const handleSmartComplete = async () => {
+    if (!formState.hcpName || !formState.interactionType) {
+      setToastMessage({ title: 'Missing Info', message: 'Please provide HCP Name and Interaction Type for smart completion.' });
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+    setIsSmartCompleting(true);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: `Based on this partial interaction: HCP: ${formState.hcpName}, Specialty: ${formState.hcpSpecialty}, Type: ${formState.interactionType}. Please suggest topicsDiscussed, outcomes, and followUpActions. Return ONLY valid JSON format like: {"topicsDiscussed": "...", "outcomes": "...", "followUpActions": "..."}` 
+        }),
+      });
+      const data = await response.json();
+      const jsonStr = data.response.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(jsonStr);
+      dispatch(updateMultipleFields({
+        topicsDiscussed: formState.topicsDiscussed || parsed.topicsDiscussed,
+        outcomes: formState.outcomes || parsed.outcomes,
+        followUpActions: formState.followUpActions || parsed.followUpActions,
+      }));
+      setToastMessage({ title: 'Smart Complete', message: 'Fields auto-completed successfully.' });
+      setTimeout(() => setToastMessage(null), 4000);
+    } catch (error) {
+      console.error("Smart complete failed", error);
+      setToastMessage({ title: 'Error', message: 'Failed to auto-complete fields.' });
+      setTimeout(() => setToastMessage(null), 4000);
+    } finally {
+      setIsSmartCompleting(false);
+    }
+  };
 
   const handleChange = (field: keyof InteractionState, value: string) => {
     dispatch(updateField({ field, value }));
@@ -327,6 +402,15 @@ export default function InteractionForm() {
       </section>
 
       <FormGroup title={t.basicDetails} icon="📋">
+        {conflictWarning && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg flex items-start gap-2 shadow-sm">
+            <svg className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+              <p className="font-bold mb-0.5">Potential Conflict Detected</p>
+              <p>An interaction with this HCP on this date has already been logged. Please verify to avoid duplicates.</p>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label className={labelClasses}>{t.hcpName} <span className="text-red-500">*</span></label>
@@ -421,7 +505,7 @@ export default function InteractionForm() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className={labelClasses}>{t.date} <span className="text-red-500">*</span></label>
             <input
@@ -440,6 +524,25 @@ export default function InteractionForm() {
               className={getInputClasses('time')}
             />
           </div>
+          <div>
+            <label className={labelClasses}>Duration</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="MM:SS"
+                value={formState.duration}
+                onChange={(e) => handleChange('duration', e.target.value)}
+                className={`${getInputClasses('duration')} flex-1`}
+              />
+              <button
+                type="button"
+                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                className={`px-3 rounded-lg text-white text-xs font-bold transition-colors flex items-center justify-center min-w-[70px] ${isTimerRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+              >
+                {isTimerRunning ? 'Stop' : 'Start'}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -456,6 +559,20 @@ export default function InteractionForm() {
       </FormGroup>
 
       <FormGroup title={t.coreDiscussion} icon="💬">
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={handleSmartComplete}
+            disabled={isSmartCompleting}
+            className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold hover:bg-purple-100 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+          >
+            {isSmartCompleting ? (
+              <div className="w-3 h-3 border-2 border-purple-700 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <span>✨ AI Smart Complete</span>
+            )}
+          </button>
+        </div>
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">{t.topicsDiscussed}</label>
