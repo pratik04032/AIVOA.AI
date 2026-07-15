@@ -20,6 +20,7 @@ export default function InteractionForm() {
   const formState = useSelector((state: RootState) => state.interaction);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGeneratingSentence, setIsGeneratingSentence] = useState(false);
+  const [isAnalyzingSentiment, setIsAnalyzingSentiment] = useState(false);
   const [sentenceSummary, setSentenceSummary] = useState('');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -197,6 +198,29 @@ export default function InteractionForm() {
       console.error('Failed to generate sentence summary', error);
     } finally {
       setIsGeneratingSentence(false);
+    }
+  };
+
+  const handleAnalyzeSentiment = async () => {
+    if (!formState.topicsDiscussed || formState.topicsDiscussed.trim() === '') return;
+    setIsAnalyzingSentiment(true);
+    try {
+      const response = await fetch('/api/chat/analyze-sentiment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: formState.topicsDiscussed }),
+      });
+      const data = await response.json();
+      if (data.sentiment) {
+        dispatch(updateMultipleFields({ 
+          sentiment: data.sentiment, 
+          highlightedFields: ['sentiment'] 
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to analyze sentiment', error);
+    } finally {
+      setIsAnalyzingSentiment(false);
     }
   };
 
@@ -439,13 +463,24 @@ export default function InteractionForm() {
             rows={3}
             value={formState.topicsDiscussed}
             onChange={(e) => handleChange('topicsDiscussed', e.target.value)}
+            onBlur={handleAnalyzeSentiment}
             className={getInputClasses('topicsDiscussed')}
           />
           <div className="flex items-center justify-between mt-2">
             <p className="text-[10px] text-slate-500">Include main questions asked and objections raised.</p>
-            <button className="text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
-              <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
-            </button>
+            <div className="flex gap-2">
+              <button 
+                type="button" 
+                onClick={handleAnalyzeSentiment}
+                disabled={isAnalyzingSentiment || !formState.topicsDiscussed}
+                className="text-[11px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 hover:bg-purple-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm disabled:opacity-50"
+              >
+                <span className="mr-1.5">🧠</span> {isAnalyzingSentiment ? 'Analyzing Tone...' : 'Analyze Tone'}
+              </button>
+              <button type="button" className="text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
+                <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
+              </button>
+            </div>
           </div>
         </div>
       </FormGroup>

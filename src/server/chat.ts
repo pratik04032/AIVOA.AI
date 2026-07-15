@@ -53,6 +53,36 @@ ${JSON.stringify(formState, null, 2)}`;
   }
 });
 
+chatRouter.post("/analyze-sentiment", async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || text.trim() === '') {
+      return res.json({ sentiment: 'Neutral' });
+    }
+    const llm = new ChatGroq({
+      model: "llama-3.1-8b-instant",
+      apiKey: process.env.GROQ_API_KEY,
+      temperature: 0.1,
+    });
+
+    const prompt = `Analyze the sentiment of the following interaction notes from a healthcare professional meeting.
+Return ONLY one of the following words: Positive, Neutral, or Negative. Do not include any punctuation or extra text.
+
+Notes:
+"${text}"`;
+
+    const response = await llm.invoke([new HumanMessage({ content: prompt })]);
+    let sentiment = response.content.toString().trim().replace(/[^a-zA-Z]/g, '');
+    if (!['Positive', 'Neutral', 'Negative'].includes(sentiment)) {
+      sentiment = 'Neutral'; // fallback
+    }
+    res.json({ sentiment });
+  } catch (error: any) {
+    console.error("Sentiment analysis error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 chatRouter.post("/", async (req, res) => {
   try {
     const { messages, formState } = req.body;
