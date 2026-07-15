@@ -62,6 +62,7 @@ hcpRouter.post("/interactions", async (req, res) => {
       sentiment: data.sentiment,
       outcomes: data.outcomes,
       followUpActions: data.followUpActions,
+      followUpDate: data.followUpDate,
       summary: data.executiveSummary || data.summary,
       createdAt: new Date().toISOString(),
     };

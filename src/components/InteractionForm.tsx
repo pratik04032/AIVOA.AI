@@ -413,19 +413,36 @@ export default function InteractionForm() {
           <p className="text-[10px] text-slate-500 mt-1">What was agreed upon? e.g., "Agreed to review literature by Friday."</p>
         </div>
 
-        <div>
-          <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Follow-up Actions</label>
-            <span className="text-[10px] text-slate-400 font-mono">{formState.followUpActions.length} chars</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Follow-up Actions</label>
+              <span className="text-[10px] text-slate-400 font-mono">{formState.followUpActions.length} chars</span>
+            </div>
+            <textarea
+              placeholder="Enter next steps or tasks..."
+              rows={2}
+              value={formState.followUpActions}
+              onChange={(e) => handleChange('followUpActions', e.target.value)}
+              className={getInputClasses('followUpActions')}
+            />
+            <p className="text-[10px] text-slate-500 mt-1">Specific tasks to be done before the next meeting.</p>
           </div>
-          <textarea
-            placeholder="Enter next steps or tasks..."
-            rows={2}
-            value={formState.followUpActions}
-            onChange={(e) => handleChange('followUpActions', e.target.value)}
-            className={getInputClasses('followUpActions')}
-          />
-          <p className="text-[10px] text-slate-500 mt-1">Specific tasks to be done before the next meeting.</p>
+          <div>
+            <label className={labelClasses}>Follow-up Date</label>
+            <input
+              type="date"
+              value={formState.followUpDate}
+              onChange={(e) => handleChange('followUpDate', e.target.value)}
+              className={getInputClasses('followUpDate')}
+            />
+            {formState.followUpDate && new Date(formState.followUpDate) < new Date(new Date().setHours(0,0,0,0)) && (
+              <p className="text-xs text-red-600 mt-1.5 font-medium flex items-center gap-1 animate-in fade-in">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                This follow-up date is overdue!
+              </p>
+            )}
+          </div>
         </div>
         </div>
       </FormGroup>

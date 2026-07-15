@@ -182,7 +182,12 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
             <div key={interaction.id} className="p-4 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col gap-2">
               <div className="flex justify-between items-start">
                 <div className="flex flex-col">
-                  <h4 className="text-sm font-bold text-slate-800">{interaction.hcpName}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-800">{interaction.hcpName}</h4>
+                    {interaction.followUpDate && new Date(interaction.followUpDate) < new Date(new Date().setHours(0,0,0,0)) && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-700 border border-red-200">Overdue Follow-up</span>
+                    )}
+                  </div>
                   {hcps[interaction.hcpName] && (
                     <span className="text-xs text-slate-500">{hcps[interaction.hcpName]}</span>
                   )}
@@ -195,6 +200,12 @@ export default function RecentInteractions({ refreshTrigger }: { refreshTrigger:
               {interaction.summary && (
                 <div className="text-xs text-slate-600 leading-relaxed line-clamp-2 mt-1">
                   {interaction.summary}
+                </div>
+              )}
+              {interaction.followUpDate && (
+                <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  Follow-up: <span className="font-semibold">{new Date(interaction.followUpDate).toLocaleDateString()}</span>
                 </div>
               )}
             </div>

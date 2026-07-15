@@ -12,6 +12,7 @@ export interface InteractionState {
   sentiment: string;
   outcomes: string;
   followUpActions: string;
+  followUpDate: string;
   executiveSummary: string;
   highlightedFields: string[];
 }
@@ -28,6 +29,7 @@ const initialInteractionState: InteractionState = {
   sentiment: '',
   outcomes: '',
   followUpActions: '',
+  followUpDate: '',
   executiveSummary: '',
   highlightedFields: [],
 };
