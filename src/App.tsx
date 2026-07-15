@@ -8,6 +8,8 @@ import { store, RootState, updateMultipleFields, setLanguage } from './store.ts'
 import InteractionForm from './components/InteractionForm.tsx';
 import ChatAssistant from './components/ChatAssistant.tsx';
 import HCPPerformanceOverlay from './components/HCPPerformanceOverlay.tsx';
+import InteractionMapOverlay from './components/InteractionMapOverlay.tsx';
+import QuickNotes from './components/QuickNotes.tsx';
 import PrintInteraction from './components/PrintInteraction.tsx';
 import { useEffect, useState, useRef } from 'react';
 import { translations, Language } from './translations.ts';
@@ -20,6 +22,8 @@ function AppContent() {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | ''>('');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [showPerformanceOverlay, setShowPerformanceOverlay] = useState(false);
+  const [showInteractionMap, setShowInteractionMap] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<'assistant' | 'notes'>('assistant');
   const initialLoadDone = useRef(false);
 
   // Load from localStorage on mount
@@ -78,6 +82,13 @@ function AppContent() {
             <option value="de">Deutsch</option>
           </select>
           <button
+            onClick={() => setShowInteractionMap(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors rounded-lg text-sm font-semibold border border-blue-200"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7l6-3 5.447 2.724A1 1 0 0121 7.618v10.764a1 1 0 01-1.447.894L15 17l-6 3z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7v13M15 4v13"></path></svg>
+            Interaction Map
+          </button>
+          <button
             onClick={() => setShowPerformanceOverlay(true)}
             className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors rounded-lg text-sm font-semibold border border-indigo-200"
           >
@@ -113,21 +124,34 @@ function AppContent() {
           </div>
 
           {/* Right Chat Side (Action Pane style) */}
-          <div className="w-80 sm:w-96 bg-white border-l border-slate-200 flex flex-col shrink-0">
-            <div className="p-5 border-b border-slate-100 shrink-0">
-              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd"></path></svg>
+          <div className="w-80 sm:w-96 bg-white border-l border-slate-200 flex flex-col shrink-0 transition-all">
+            <div className="flex border-b border-slate-200 bg-slate-50 shrink-0">
+              <button 
+                onClick={() => setSidebarTab('assistant')}
+                className={`flex-1 py-3 text-xs uppercase tracking-wider font-bold border-b-2 transition-colors ${sidebarTab === 'assistant' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+              >
                 {t.aiAssistant}
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">{t.logViaChat}</p>
+              </button>
+              <button 
+                onClick={() => setSidebarTab('notes')}
+                className={`flex-1 py-3 text-xs uppercase tracking-wider font-bold border-b-2 transition-colors ${sidebarTab === 'notes' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+              >
+                Quick Notes
+              </button>
             </div>
-            <ChatAssistant />
+            
+            <div className="flex-1 overflow-y-auto">
+               {sidebarTab === 'assistant' ? <ChatAssistant /> : <QuickNotes />}
+            </div>
           </div>
         </div>
       </main>
       
       {showPerformanceOverlay && (
         <HCPPerformanceOverlay onClose={() => setShowPerformanceOverlay(false)} />
+      )}
+      {showInteractionMap && (
+        <InteractionMapOverlay onClose={() => setShowInteractionMap(false)} />
       )}
     </div>
   );
