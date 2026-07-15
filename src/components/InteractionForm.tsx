@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, updateField, resetForm, clearHighlights, InteractionState, updateMultipleFields } from '../store.ts';
 import { useState, useEffect, useRef } from 'react';
 import RecentInteractions from './RecentInteractions.tsx';
+import { translations, Language } from '../translations.ts';
 
 const FormGroup = ({ title, icon, children }: any) => (
   <fieldset className="border border-slate-200 rounded-xl p-5 md:p-6 bg-white shadow-sm mb-8">
@@ -18,6 +19,8 @@ const FormGroup = ({ title, icon, children }: any) => (
 export default function InteractionForm() {
   const dispatch = useDispatch();
   const formState = useSelector((state: RootState) => state.interaction);
+  const currentLanguage = useSelector((state: RootState) => state.app.language) as Language;
+  const t = translations[currentLanguage];
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isGeneratingSentence, setIsGeneratingSentence] = useState(false);
   const [isAnalyzingSentiment, setIsAnalyzingSentiment] = useState(false);
@@ -299,7 +302,7 @@ export default function InteractionForm() {
       </section>
 
       <section className="mb-8">
-        <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Quick Templates</h3>
+        <h3 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">{t.quickTemplates}</h3>
         <div className="relative w-full max-w-md">
           <select
             onChange={(e) => {
@@ -309,13 +312,13 @@ export default function InteractionForm() {
             className="w-full px-3 py-2 border border-indigo-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-sm text-indigo-800 bg-indigo-50 appearance-none font-medium cursor-pointer"
             defaultValue=""
           >
-            <option value="" disabled>Select a template to auto-fill...</option>
-            <option value="Clinical Education">Clinical Education</option>
-            <option value="Adverse Event Report">Adverse Event Report</option>
-            <option value="Administrative">Administrative</option>
-            <option value="Initial Meeting">Initial Meeting</option>
-            <option value="Routine Follow-up">Routine Follow-up</option>
-            <option value="Product Launch">Product Launch</option>
+            <option value="" disabled>{t.selectTemplate}</option>
+            <option value="Clinical Education">{t.clinicalEducation}</option>
+            <option value="Adverse Event Report">{t.adverseEventReport}</option>
+            <option value="Administrative">{t.administrative}</option>
+            <option value="Initial Meeting">{t.initialMeeting}</option>
+            <option value="Routine Follow-up">{t.routineFollowUp}</option>
+            <option value="Product Launch">{t.productLaunch}</option>
           </select>
           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-indigo-500">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -323,14 +326,14 @@ export default function InteractionForm() {
         </div>
       </section>
 
-      <FormGroup title="Basic Information" icon="📋">
+      <FormGroup title={t.basicDetails} icon="📋">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className={labelClasses}>HCP Name <span className="text-red-500">*</span></label>
+            <label className={labelClasses}>{t.hcpName} <span className="text-red-500">*</span></label>
             <div className="relative w-full">
               <input
                 type="text"
-                placeholder="Search or select HCP..."
+                placeholder={t.searchPlaceholder}
                 value={hcpSearchQuery || formState.hcpName}
                 onChange={(e) => {
                   setHcpSearchQuery(e.target.value);
@@ -404,13 +407,13 @@ export default function InteractionForm() {
             
           </div>
           <div>
-            <label className={labelClasses}>Interaction Type</label>
+            <label className={labelClasses}>{t.interactionType}</label>
             <select
               value={formState.interactionType}
               onChange={(e) => handleChange('interactionType', e.target.value)}
               className={getInputClasses('interactionType')}
             >
-              <option value="">Select...</option>
+              <option value="">{t.selectType}</option>
               <option value="Meeting">Meeting</option>
               <option value="Call">Call</option>
               <option value="Email">Email</option>
@@ -420,7 +423,7 @@ export default function InteractionForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className={labelClasses}>Date <span className="text-red-500">*</span></label>
+            <label className={labelClasses}>{t.date} <span className="text-red-500">*</span></label>
             <input
               type="date"
               value={formState.date}
@@ -429,7 +432,7 @@ export default function InteractionForm() {
             />
           </div>
           <div>
-            <label className={labelClasses}>Time</label>
+            <label className={labelClasses}>{t.time}</label>
             <input
               type="time"
               value={formState.time}
@@ -440,10 +443,10 @@ export default function InteractionForm() {
         </div>
 
         <div>
-          <label className={labelClasses}>Attendees</label>
+          <label className={labelClasses}>{t.attendees}</label>
           <input
             type="text"
-            placeholder="Enter names or search..."
+            placeholder={t.attendeesPlaceholder}
             value={formState.attendees}
             onChange={(e) => handleChange('attendees', e.target.value)}
             className={getInputClasses('attendees')}
@@ -452,14 +455,14 @@ export default function InteractionForm() {
         </div>
       </FormGroup>
 
-      <FormGroup title="Discussion Notes" icon="💬">
+      <FormGroup title={t.coreDiscussion} icon="💬">
         <div>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Topics Discussed</label>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">{t.topicsDiscussed}</label>
             <span className="text-[10px] text-slate-400 font-mono">{formState.topicsDiscussed.length} chars</span>
           </div>
           <textarea
-            placeholder="Enter key discussion points..."
+            placeholder={t.topicsPlaceholder}
             rows={3}
             value={formState.topicsDiscussed}
             onChange={(e) => handleChange('topicsDiscussed', e.target.value)}
@@ -475,26 +478,26 @@ export default function InteractionForm() {
                 disabled={isAnalyzingSentiment || !formState.topicsDiscussed}
                 className="text-[11px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 hover:bg-purple-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm disabled:opacity-50"
               >
-                <span className="mr-1.5">🧠</span> {isAnalyzingSentiment ? 'Analyzing Tone...' : 'Analyze Tone'}
+                <span className="mr-1.5">🧠</span> {isAnalyzingSentiment ? t.analyzingTone : t.analyzeTone}
               </button>
               <button type="button" className="text-[11px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 hover:bg-blue-100 px-3 py-1.5 rounded-md flex items-center transition-colors shadow-sm">
-                <span className="mr-1.5">🎙️</span> Summarize from Voice Note (Requires Consent)
+                <span className="mr-1.5">🎙️</span> {t.summarizeVoice}
               </button>
             </div>
           </div>
         </div>
       </FormGroup>
 
-      <FormGroup title="Materials & Samples" icon="📦">
+      <FormGroup title={t.materialsShared} icon="📦">
         <div className="mb-6">
           <div className="flex items-center justify-between py-2 border-b border-slate-200/60 mb-2">
-            <span className="text-sm text-slate-600 font-medium">Materials Shared</span>
+            <span className="text-sm text-slate-600 font-medium">{t.materialsShared}</span>
             <button className="text-[11px] font-semibold px-2.5 py-1 border border-slate-200 text-slate-600 rounded bg-white hover:bg-slate-50 transition-colors shadow-sm">🔍 Search/Add</button>
           </div>
           <input
             type="text"
             list="materials-options"
-            placeholder="e.g. Product Brochure, Trial Kit..."
+            placeholder={t.materialsPlaceholder}
             value={formState.materialsShared}
             onChange={(e) => handleChange('materialsShared', e.target.value)}
             className={getInputClasses('materialsShared')}
@@ -552,9 +555,9 @@ export default function InteractionForm() {
         </div>
       </FormGroup>
 
-      <FormGroup title="Outcomes & Next Steps" icon="🎯">
+      <FormGroup title={t.outcomesNextSteps} icon="🎯">
         <div className={`p-4 -mx-4 rounded-lg transition-all duration-500 mb-6 ${formState.highlightedFields?.includes('sentiment') ? 'bg-green-50 ring-2 ring-green-400/30' : ''}`}>
-        <label className={labelClasses}>Observed/Inferred HCP Sentiment</label>
+        <label className={labelClasses}>{t.sentiment}</label>
         <div className="flex space-x-6 mt-2">
           {['Positive', 'Neutral', 'Negative'].map((sentiment) => (
             <label key={sentiment} className="flex items-center space-x-2.5 text-sm text-slate-700 font-medium cursor-pointer">
@@ -566,7 +569,7 @@ export default function InteractionForm() {
                 onChange={(e) => handleChange('sentiment', e.target.value)}
                 className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
               />
-              <span>{sentiment}</span>
+              <span>{sentiment === 'Positive' ? t.positive : sentiment === 'Negative' ? t.negative : t.neutral}</span>
             </label>
           ))}
         </div>
@@ -576,7 +579,7 @@ export default function InteractionForm() {
           <div>
           <div className="flex justify-between items-center mb-1.5">
             <div className="flex items-center gap-2">
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Outcomes</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">{t.outcomes}</label>
               <button
                 type="button"
                 onClick={() => toggleRecording('outcomes')}
@@ -589,7 +592,7 @@ export default function InteractionForm() {
             <span className="text-[10px] text-slate-400 font-mono">{formState.outcomes.length} chars</span>
           </div>
           <textarea
-            placeholder="Key outcomes or agreements..."
+            placeholder={t.outcomesPlaceholder}
             rows={2}
             value={formState.outcomes}
             onChange={(e) => handleChange('outcomes', e.target.value)}
@@ -602,7 +605,7 @@ export default function InteractionForm() {
           <div>
             <div className="flex justify-between items-center mb-1.5">
               <div className="flex items-center gap-2">
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">Follow-up Actions</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider">{t.followUpActions}</label>
                 <button
                   type="button"
                   onClick={() => toggleRecording('followUpActions')}
@@ -615,7 +618,7 @@ export default function InteractionForm() {
               <span className="text-[10px] text-slate-400 font-mono">{formState.followUpActions.length} chars</span>
             </div>
             <textarea
-              placeholder="Enter next steps or tasks..."
+              placeholder={t.followUpPlaceholder}
               rows={2}
               value={formState.followUpActions}
               onChange={(e) => handleChange('followUpActions', e.target.value)}
@@ -624,7 +627,7 @@ export default function InteractionForm() {
             <p className="text-[10px] text-slate-500 mt-1">Specific tasks to be done before the next meeting.</p>
           </div>
           <div>
-            <label className={labelClasses}>Follow-up Date</label>
+            <label className={labelClasses}>{t.followUpDate}</label>
             <input
               type="date"
               value={formState.followUpDate}
@@ -665,7 +668,7 @@ export default function InteractionForm() {
       <section className="pt-6 mt-6 border-t border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Executive Summary</h3>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{t.executiveSummary}</h3>
             <button
               type="button"
               onClick={() => toggleRecording('executiveSummary')}
@@ -687,13 +690,13 @@ export default function InteractionForm() {
                  Generating...
               </>
             ) : (
-              <>✨ Auto-Summarize</>
+              <>✨ {t.generateSentence}</>
             )}
           </button>
         </div>
         
         <textarea
-          placeholder="Enter a brief, overall summary of this interaction... Use voice-to-text or Auto-Summarize."
+          placeholder={t.executiveSummaryPlaceholder}
           rows={4}
           value={formState.executiveSummary}
           onChange={(e) => handleChange('executiveSummary', e.target.value)}
@@ -708,7 +711,7 @@ export default function InteractionForm() {
           className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-          Print
+          {t.print}
         </button>
         <button
           type="button"
@@ -718,7 +721,7 @@ export default function InteractionForm() {
           }}
           className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors shadow-sm"
         >
-          Clear All
+          {t.clearForm}
         </button>
         <button
           type="button"
@@ -742,7 +745,7 @@ export default function InteractionForm() {
           }}
           className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-lg ${!formState.hcpName || !formState.date ? 'bg-blue-400 text-white cursor-not-allowed shadow-blue-400/20' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/20'}`}
         >
-          Save Interaction
+          {t.submitRecord}
         </button>
       </section>
 

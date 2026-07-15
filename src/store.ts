@@ -94,10 +94,23 @@ export const chatSlice = createSlice({
 
 export const { addMessage, setTyping } = chatSlice.actions;
 
+export const appSlice = createSlice({
+  name: 'app',
+  initialState: { language: 'en' as 'en' | 'fr' | 'es' | 'de' },
+  reducers: {
+    setLanguage: (state, action: PayloadAction<'en' | 'fr' | 'es' | 'de'>) => {
+      state.language = action.payload;
+    }
+  }
+});
+
+export const { setLanguage } = appSlice.actions;
+
 export const store = configureStore({
   reducer: {
     interaction: interactionSlice.reducer,
     chat: chatSlice.reducer,
+    app: appSlice.reducer,
   },
 });
 
